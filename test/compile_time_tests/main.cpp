@@ -168,5 +168,60 @@ int main() {
 
     static_assert(tensor::matrix_product(m1, m2) == expected_product, "Matrix product should be equal to expected product.");
   }
+
+  {
+    constexpr tensor::matrix<3, 2> m1{
+      {
+        std::array{ 1.f, 1.f },
+        std::array{ 2.f, 2.f },
+        std::array{ 3.f, 3.f },
+      }
+    };
+    constexpr tensor::matrix<2, 3> m2{
+      {
+        std::array{ 1.f, 1.f, 1.f },
+        std::array{ 2.f, 2.f, 2.f },
+      }
+    };
+
+    constexpr tensor::matrix<3, 3> expected_product{
+      {
+        std::array{ 3.f, 3.f, 3.f },
+        std::array{ 6.f, 6.f, 6.f },
+        std::array{ 9.f, 9.f, 9.f },
+      }
+    };
+
+    static_assert(tensor::matrix_product(m1, m2) == expected_product, "Matrix product should be equal to expected product.");
+  }
+
+  {
+    constexpr tensor::matrix<1, 1> m1{ 1.f };
+    constexpr tensor::matrix<1, 1> m2{ 2.f };
+
+    constexpr tensor::matrix<1, 1> expected_product{ 2.f };
+    static_assert(tensor::matrix_product(m1, m2) == expected_product, "Matrix product should be equal to expected product.");
+  }
+
+  {
+    static_assert(tensor::epsilon_equal(0.f, 0.f), "0 should be equal to 0.");
+    static_assert(!tensor::epsilon_equal(0.f, 0.0001f), "0 should be equal to 0.0001.");
+    static_assert(tensor::epsilon_equal(0.f, 0.0001f, 0.0002f), "0 should be equal to 0.0001 with epsilon 0.0002.");
+    static_assert(!tensor::epsilon_equal(0.f, 0.0001f, 0.00005f), "0 should not be equal to 0.0001 with epsilon 0.00005.");
+
+    static_assert(tensor::activation::Sigmoid{}(-3.f) == 0.0474258773f, "Sigmoid activation function should return 0.0474258773f for input -3.");
+    static_assert(tensor::epsilon_equal(tensor::activation::Sigmoid{}(-3.f), 0.0474f, 0.0001f), "Sigmoid activation function should return 0.0474f for input -3 with epsilon 0.0001.");
+    static_assert(tensor::activation::Sigmoid{}(3.f) == 0.952574126822433f, "Sigmoid activation function should return 0.952574126822433f for input 3.");
+    static_assert(tensor::epsilon_equal(tensor::activation::Sigmoid{}(3.f), 0.9526f, 0.0001f), "Sigmoid activation function should return 0.9526f for input 3 with epsilon 0.0001.");
+    static_assert(tensor::activation::Sigmoid{}(0.f) == 0.5f, "Sigmoid activation function should return 0.5 for input 0.");
+
+    static_assert(tensor::activation::ReLU{}(-3.f) == 0.f, "ReLU activation function should return 0 for input -3.");
+    static_assert(tensor::activation::ReLU{}(3.f) == 3.f, "ReLU activation function should return 3 for input 3.");
+    static_assert(tensor::activation::ReLU{}(0.f) == 0.f, "ReLU activation function should return 0 for input 0.");
+    static_assert(tensor::activation::ReLU{}(0.5f) == 0.5f, "ReLU activation function should return 0.5 for input 0.5.");
+    static_assert(tensor::activation::ReLU{}(-0.5f) == 0.f, "ReLU activation function should return 0 for input -0.5.");
+    static_assert(tensor::activation::ReLU{}(1.5f) == 1.5f, "ReLU activation function should return 1.5 for input 1.5.");
+  }
+
   return 0;
 }

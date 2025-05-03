@@ -207,23 +207,8 @@ namespace tensor {
         template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
         constexpr auto operator()(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) const {
           static_assert(R1 > 0 && R2 > 0 && C1 > 0 && C2 > 0, "Matrix dimensions must be greater than zero.");
-          if constexpr (R1 == R2 && C1 == C2) {
-            return matrix<R1, C1>{ apply_to_matrix_elements<R1, C1>(m1, m2, [](const real_t& a, const real_t& b) { return a + b; }) };
-          } else if constexpr (R1 <= R2 && C1 <= C2) {
-            /// apply to m1 and m2 for all elements of m1
-            /// then apply just m2 to result for overflow elements of m2
-          } else if constexpr (R1 >= R2 && C1 >= C2) {
-            /// apply to m1 and m2 for all elements of m2
-            /// then apply just m1 to result for overflow elements of m1
-          } else if constexpr (R1 > R2 && C1 < C2) {
-            /// TODO:
-            static_assert(false, "Not implemented yet.");
-          } else if constexpr (R1 < R2 && C1 > C2) {
-            /// TODO:
-            static_assert(false, "Not implemented yet.");
-          } else {
-            static_assert(false, "Not implemented yet.");
-          }
+          static_assert(R1 == R2 && C1 == C2, "Matrix dimensions must be equal.");
+          return matrix<R1, C1>{ apply_to_matrix_elements<R1, C1>(m1, m2, [](const real_t& a, const real_t& b) { return a + b; }) };
         }
       };
 
@@ -231,47 +216,35 @@ namespace tensor {
         template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
         constexpr auto operator()(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) const {
           static_assert(R1 > 0 && R2 > 0 && C1 > 0 && C2 > 0, "Matrix dimensions must be greater than zero.");
-          if constexpr (R1 == R2 && C1 == C2) {
-            return matrix<R1, C1>{ apply_to_matrix_elements<R1, C1>(m1, m2, [](const real_t& a, const real_t& b) { return a - b; }) };
-          } else if constexpr (R1 <= R2 && C1 <= C2) {
-            /// apply to m1 and m2 for all elements of m1
-            /// then apply just m2 to result for overflow elements of m2
-          } else if constexpr (R1 >= R2 && C1 >= C2) {
-            /// apply to m1 and m2 for all elements of m2
-            /// then apply just m1 to result for overflow elements of m1
-          } else if constexpr (R1 > R2 && C1 < C2) {
-            static_assert(false, "Not implemented yet.");
-          } else if constexpr (R1 < R2 && C1 > C2) {
-            static_assert(false, "Not implemented yet.");
-          } else {
-            static_assert(false, "Not implemented yet.");
-          }
+          static_assert(R1 == R2 && C1 == C2, "Matrix dimensions must be equal.");
+          return matrix<R1, C1>{ apply_to_matrix_elements<R1, C1>(m1, m2, [](const real_t& a, const real_t& b) { return a - b; }) };
         }
       };
 
       struct matrix_product_fn {
-        template <natural_t R, natural_t C>
-        constexpr auto operator()(const matrix<R, C>& m1, const matrix<R, C>& m2) const {
-          static_assert(R > 0 && C > 0, "Matrix dimensions must be greater than zero.");
-          static_assert(R == C, "Matrix dimensions must be equal.");
+        template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
+        constexpr auto operator()(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) const {
+          static_assert(R1 > 0 && C1 > 0 && R2 > 0 && C2 > 0, "Matrix dimensions must be greater than zero.");
+          static_assert(R1 == C2, "Matrix dimensions must be equal.");
+          static_assert(C1 == R2, "Matrix dimensions must be equal.");
 
-          return matrix<R, C>{ matrix_product<R, C>(m1, m2) };
+          return matrix<R1, C2>{ matrix_product<R1, C1, R2, C2>(m1, m2) };
         }
 
        private:
-        template <natural_t R, natural_t C>
-        constexpr std::array<real_t, matrix_dim<R, C>> matrix_product(const matrix<R, C>& m1, const matrix<R, C>& m2) const {
-          return matrix_product_helper<R, C>(m1, m2, std::make_index_sequence<R>{});
+        template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
+        constexpr std::array<real_t, matrix_dim<R1, C2>> matrix_product(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) const {
+          return matrix_product_helper<R1, C1, R2, C2>(m1, m2, std::make_index_sequence<R1>{});
         }
 
-        template <natural_t R, natural_t C, size_t... I>
-        constexpr std::array<real_t, matrix_dim<R, C>> matrix_product_helper(const matrix<R, C>& m1, const matrix<R, C>& m2, std::index_sequence<I...>) const {
-          return build_flattened_array(get_matrix_product_row<R, C, I>(m1, m2, std::make_index_sequence<C>{})...);
+        template <natural_t R1, natural_t C1, natural_t R2, natural_t C2, size_t... I>
+        constexpr std::array<real_t, matrix_dim<R1, C2>> matrix_product_helper(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2, std::index_sequence<I...>) const {
+          return build_flattened_array(get_matrix_product_row<R1, C1, R2, C2, I>(m1, m2, std::make_index_sequence<C2>{})...);
         }
 
-        template <natural_t R, natural_t C, size_t I, size_t... J>
-        constexpr std::array<real_t, C> get_matrix_product_row(const matrix<R, C>& m1, const matrix<R, C>& m2, std::index_sequence<J...>) const {
-          return std::array<real_t, C>{ dot_product(get_matrix_row(m1, I), get_matrix_col(m2, J))... };
+        template <natural_t R1, natural_t C1, natural_t R2, natural_t C2, size_t I, size_t... J>
+        constexpr std::array<real_t, C2> get_matrix_product_row(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2, std::index_sequence<J...>) const {
+          return std::array<real_t, C2>{ dot_product(get_matrix_row(m1, I), get_matrix_col(m2, J))... };
         }
       };
 
