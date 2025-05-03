@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <numeric>
 #include <utility>
 
 #include "core/types.hpp"
