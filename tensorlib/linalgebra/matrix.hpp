@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <numeric>
 #include <utility>
 
 #include "core/types.hpp"
@@ -164,6 +163,9 @@ namespace tensor {
     }
 
   }  // namespace detail
+
+  template <natural_t R, natural_t C>
+  constexpr inline matrix<R, C> zero_matrix{};
 
   template <natural_t N>
   constexpr inline matrix<N, N> identity = detail::identity_builder<N, N>();

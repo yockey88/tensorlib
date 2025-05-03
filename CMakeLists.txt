@@ -15,6 +15,11 @@ set(TENSORLIB_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/tensorlib")
 
 option(TENSORLIB_REAL_TYPE_USE_DOUBLE "Use doubles for tensor values" OFF)
 
+### add dependencies
+find_package(Threads REQUIRED)
+
+add_subdirectory(extern)
+
 add_subdirectory(tensorlib)
 # add_subdirectory(gpu)
 add_subdirectory(test)
