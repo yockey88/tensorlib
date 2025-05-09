@@ -45,7 +45,7 @@ namespace tensor {
       template <natural_t R, natural_t C, size_t... I>
       consteval vector<R> get_all_elements_of_col_helper(const matrix<R, C>& m, natural_t col, std::index_sequence<I...>) {
         return vector<R>{ get_element_of_col_in_row<R, C, I>(m, col)... };
-      }
+      };
 
       template <size_t... C>
       constexpr auto build_flattened_array(const std::array<real_t, C>... arrays) {
@@ -56,6 +56,13 @@ namespace tensor {
         return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
           return std::array<real_t, total_size>{ { std::get<Is>(all_elements)... } };
         }(std::make_index_sequence<total_size>{});
+      }
+
+      constexpr auto build_array_from_series(auto&&... values) {
+        static_assert(sizeof...(values) > 0, "At least one value is required.");
+
+        constexpr std::size_t size = sizeof...(values);
+        return std::array<real_t, size>{ values... };
       }
 
       template <natural_t R, natural_t C, size_t... I>
@@ -114,7 +121,8 @@ namespace tensor {
       return values[detail::matrix_index(row, col, cols)];
     }
 
-    constexpr vector<Rows> operator[](natural_t i) const { return get_matrix_col(*this, i); }
+    constexpr real_t operator[](natural_t i) { return values[i]; }
+    constexpr real_t operator[](natural_t i) const { return values[i]; }
 
     constexpr auto begin() const noexcept { return values.begin(); }
     constexpr auto end() const noexcept { return values.end(); }
@@ -188,7 +196,7 @@ namespace tensor {
       template <natural_t R, natural_t C, typename Fn, natural_t I, size_t... J>
         requires std::is_invocable_r_v<real_t, Fn, real_t, real_t>
       constexpr std::array<real_t, C> apply_to_matrix_row(const matrix<R, C>& m1, const matrix<R, C>& m2, Fn&& fn, std::index_sequence<J...>) {
-        return std::array<real_t, C>{ std::invoke(std::forward<Fn>(fn), m1(I, J), m1(I, J))... };
+        return std::array<real_t, C>{ std::invoke(std::forward<Fn>(fn), m1(I, J), m2(I, J))... };
       }
 
       template <natural_t R, natural_t C, typename Fn, size_t... I>
@@ -201,6 +209,57 @@ namespace tensor {
         requires std::is_invocable_r_v<real_t, Fn, real_t, real_t>
       constexpr matrix<R, C> apply_to_matrix_elements(const matrix<R, C>& m1, const matrix<R, C>& m2, Fn&& fn) {
         return matrix<R, C>{ apply_to_matrix_elements_helper<R, C, Fn>(m1, m2, std::forward<Fn>(fn), std::make_index_sequence<R>{}) };
+      }
+
+      template <natural_t R1, natural_t C1, natural_t R2, natural_t C2, size_t I, size_t... J>
+      constexpr std::array<real_t, C2> get_matrix_product_row(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2, std::index_sequence<J...>) {
+        return std::array<real_t, C2>{ dot_product(get_matrix_row(m1, I), get_matrix_col(m2, J))... };
+      }
+
+      template <natural_t R1, natural_t C1, natural_t R2, natural_t C2, size_t... I>
+      constexpr std::array<real_t, matrix_dim<R1, C2>> apply_matrix_product_helper(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2, std::index_sequence<I...>) {
+        return build_flattened_array(get_matrix_product_row<R1, C1, R2, C2, I>(m1, m2, std::make_index_sequence<C2>{})...);
+      }
+
+      template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
+      constexpr matrix<R1, C2> apply_matrix_product(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) {
+        return matrix<R1, C2>{ apply_matrix_product_helper<R1, C1, R2, C2>(m1, m2, std::make_index_sequence<R1>{}) };
+      }
+
+      template <natural_t R, natural_t C, size_t I>
+      constexpr real_t get_matrix_vector_product_row(const matrix<R, C>& m, const vector<C>& v) {
+        return dot_product(get_matrix_row(m, I), v);
+      }
+
+      template <natural_t R, natural_t C, size_t... I>
+      constexpr std::array<real_t, R> apply_matrix_vector_product_helper(const matrix<R, C>& m, const vector<C>& v, std::index_sequence<I...>) {
+        return build_array_from_series(get_matrix_vector_product_row<R, C, I>(m, v)...);
+      }
+
+      /////// DISGUSTING HACK ////////
+      /// TODO: code should work at compile-time and runtime
+      template <natural_t R, natural_t C>
+      vector<C> runtime_get_matrix_row(const matrix<R, C>& m, natural_t row) {
+        vector<C> result{ 0.f };
+        for (natural_t i = 0; i < C; ++i) {
+          result[i] = m(row, i);
+        }
+        return result;
+      }
+
+      template <natural_t R, natural_t C>
+      vector<R> runtime_matrix_vector_product(const matrix<R, C>& m, const vector<C>& v) {
+        vector<R> result{ 0.f };
+        for (natural_t i = 0; i < R; ++i) {
+          result[i] = dot_product(runtime_get_matrix_row<R, C>(m, i), v);
+        }
+        return result;
+      }
+      /////// DISGUSTING HACK ////////
+
+      template <natural_t R, natural_t C>
+      constexpr vector<R> apply_matrix_vector_product(const matrix<R, C>& m, const vector<C>& v) {
+        return vector<R>{ apply_matrix_vector_product_helper<R, C>(m, v, std::make_index_sequence<R>{}) };
       }
 
       struct matrix_sum_fn {
@@ -223,42 +282,38 @@ namespace tensor {
 
       struct matrix_product_fn {
         template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
-        constexpr auto operator()(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) const {
+        constexpr matrix<R1, C2> operator()(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) const {
           static_assert(R1 > 0 && C1 > 0 && R2 > 0 && C2 > 0, "Matrix dimensions must be greater than zero.");
           static_assert(R1 == C2, "Matrix dimensions must be equal.");
           static_assert(C1 == R2, "Matrix dimensions must be equal.");
 
-          return matrix<R1, C2>{ matrix_product<R1, C1, R2, C2>(m1, m2) };
-        }
-
-       private:
-        template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
-        constexpr std::array<real_t, matrix_dim<R1, C2>> matrix_product(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) const {
-          return matrix_product_helper<R1, C1, R2, C2>(m1, m2, std::make_index_sequence<R1>{});
-        }
-
-        template <natural_t R1, natural_t C1, natural_t R2, natural_t C2, size_t... I>
-        constexpr std::array<real_t, matrix_dim<R1, C2>> matrix_product_helper(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2, std::index_sequence<I...>) const {
-          return build_flattened_array(get_matrix_product_row<R1, C1, R2, C2, I>(m1, m2, std::make_index_sequence<C2>{})...);
-        }
-
-        template <natural_t R1, natural_t C1, natural_t R2, natural_t C2, size_t I, size_t... J>
-        constexpr std::array<real_t, C2> get_matrix_product_row(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2, std::index_sequence<J...>) const {
-          return std::array<real_t, C2>{ dot_product(get_matrix_row(m1, I), get_matrix_col(m2, J))... };
+          return apply_matrix_product<R1, C1, R2, C2>(m1, m2);
         }
       };
 
-      // struct matrix_scalar_product_fn {
-      //   template <natural_t R, natural_t C>
-      //   constexpr auto operator()(const real_t scalar, const matrix<R, C>& m) const {
-      //     return apply_to_matrix_elements<R, C>(m, m, [scalar](const real_t& a, const real_t& b) { return a * scalar; });
-      //   }
+      struct matrix_hadamard_product_fn {
+        template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
+        constexpr auto operator()(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) const {
+          static_assert(R1 > 0 && R2 > 0 && C1 > 0 && C2 > 0, "Matrix dimensions must be greater than zero.");
+          static_assert(R1 == R2 && C1 == C2, "Matrix dimensions must be equal.");
 
-      //   template <natural_t R, natural_t C>
-      //   constexpr auto operator()(const matrix<R, C>& m, const real_t scalar) const {
-      //     return (*this)(scalar, m);
-      //   }
-      // };
+          return apply_to_matrix_elements<R1, C1>(m1, m2, [](const real_t& a, const real_t& b) { return a * b; });
+        }
+      };
+
+      struct matrix_vector_product_fn {
+        template <natural_t R, natural_t C>
+        constexpr vector<R> operator()(const matrix<R, C>& m, const vector<C>& v) const {
+          /// TODO: FIX this hack and make the same code work in compile-time contexts and runtime contexts.
+          static_assert(R > 0 && C > 0, "Matrix dimensions must be greater than zero.");
+
+          if consteval {
+            return apply_matrix_vector_product<R, C>(m, v);
+          } else {
+            return runtime_matrix_vector_product<R, C>(m, v);
+          }
+        }
+      };
 
     }  // namespace
   }  // namespace detail
@@ -266,7 +321,33 @@ namespace tensor {
   constexpr inline detail::matrix_sum_fn matrix_sum{};
   constexpr inline detail::matrix_difference_fn matrix_difference{};
   constexpr inline detail::matrix_product_fn matrix_product{};
-  // constexpr inline detail::matrix_scalar_product_fn matrix_scalar_product{};
+  constexpr inline detail::matrix_hadamard_product_fn matrix_hadamard_product{};
+  constexpr inline detail::matrix_vector_product_fn matrix_vector_product{};
+
+  // template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
+  // auto operator+(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) {
+  //   return matrix_sum(m1, m2);
+  // }
+
+  // template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
+  // auto operator-(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) {
+  //   return matrix_difference(m1, m2);
+  // }
+
+  // template <natural_t R1, natural_t C1, natural_t R2, natural_t C2>
+  // auto operator*(const matrix<R1, C1>& m1, const matrix<R2, C2>& m2) {
+  //   return matrix_product(m1, m2);
+  // }
+
+  // template <natural_t R, natural_t C, natural_t N>
+  // vector<C> operator*(const matrix<R, C>& m1, const vector<N>& v) {
+  //   return matrix_vector_product(m1, v);
+  // }
+
+  // template <natural_t R, natural_t C, natural_t N>
+  // vector<R> operator*(const vector<N>& v, const matrix<R, C>& m) {
+  //   return matrix_vector_product(v, m);
+  // }
 
 }  // namespace tensor
 

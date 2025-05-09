@@ -3,4 +3,8 @@
  **/
 #include "tensorlib.hpp"
 
-namespace tensor {}  // namespace tensor
+#include "detail/tensorlib_state.hpp"
+
+namespace tensor {
+
+}  // namespace tensor

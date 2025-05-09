@@ -51,7 +51,18 @@ namespace tensor {
   struct vector {
     constexpr vector() = default;
 
-    constexpr vector(auto&&... vals) {
+    constexpr vector(real_t val) {
+      static_assert(N > 0, "Vector dimension must be greater than zero.");
+      values.fill(val);
+    }
+
+    constexpr vector(const std::array<real_t, N>& vals) {
+      values = vals;
+    }
+
+    template <typename... Vals>
+      requires(sizeof...(Vals) == N && (std::is_same_v<std::remove_cvref_t<Vals>, real_t> && ...))
+    constexpr vector(Vals&&... vals) {
       static_assert(sizeof...(vals) == N, "Number of arguments must match the dimension of the point.");
       static_assert((std::is_same_v<std::remove_cvref_t<decltype(vals)>, real_t> && ...), "All arguments must be of type real.");
 
@@ -73,7 +84,7 @@ namespace tensor {
     constexpr auto size() const noexcept { return values.size(); }
     constexpr auto data() const noexcept { return values.data(); }
 
-    constexpr real_t operator[](natural_t i) { return values[i]; }
+    constexpr real_t& operator[](natural_t i) { return values[i]; }
     constexpr real_t operator[](natural_t i) const { return values[i]; }
 
     std::array<real_t, N> values{ 0.f };
@@ -120,8 +131,8 @@ namespace tensor {
 
       template <natural_t N, typename OuterFn, typename InnerFn>
         requires std::is_invocable_r_v<real_t, OuterFn, real_t, real_t> && std::is_invocable_r_v<real_t, InnerFn, real_t, real_t>
-      constexpr real_t accumulate_vector_elements(const vector<N>& p1, const vector<N>& p2, real_t acc, OuterFn&& fn, InnerFn&& inner_fn) {
-        return fold_left(apply_to_vector_elements(p1, p2, inner_fn).values, 0.f, std::forward<OuterFn>(fn));
+      constexpr real_t accumulate_vector_elements(const vector<N>& p1, const vector<N>& p2, real_t acc, OuterFn&& outer_fn, InnerFn&& inner_fn) {
+        return fold_left(apply_to_vector_elements(p1, p2, inner_fn).values, 0.f, std::forward<OuterFn>(outer_fn));
       }
 
       struct vector_sum_fn {
@@ -183,17 +194,20 @@ namespace tensor {
         }
       };
 
+      struct vector_hadamard_product_fn {
+        template <natural_t N>
+        constexpr auto operator()(const vector<N>& p1, const vector<N>& p2) const {
+          return apply_to_vector_elements(p1, p2, [](const real_t& a, const real_t& b) { return a * b; });
+        }
+      };
+
       struct dot_product_fn {
         template <natural_t N>
         constexpr real_t operator()(const vector<N>& p1, const vector<N>& p2) const {
           return accumulate_vector_elements(
             p1, p2, 0.f,
-            [](const real_t& acc, const real_t& x) {
-              return acc + x;
-            },
-            [](const real_t& x, const real_t& y) {
-              return x * y;
-            }
+            [](const real_t& acc, const real_t& x) { return acc + x; },
+            [](const real_t& x, const real_t& y) { return x * y; }
           );
         }
       };
@@ -205,6 +219,7 @@ namespace tensor {
   constexpr inline detail::vector_difference_fn vector_difference{};
   constexpr inline detail::vector_scalar_product_fn scalar_product{};
   constexpr inline detail::vector_magnitude_fn vector_magnitude{};
+  constexpr inline detail::vector_hadamard_product_fn hadamard_product{};
   constexpr inline detail::dot_product_fn dot_product{};
 
 }  // namespace tensor

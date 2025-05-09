@@ -3,9 +3,13 @@
  **/
 #include <gtest/gtest.h>
 
-#include "tensorlib.hpp"
+#include "detail/tensorlib_state.hpp"
 
-int main() {
-  ::testing::InitGoogleTest();
+#include "tensorlib.hpp"
+#include "tensorlib_testing.hpp"
+
+int main(int argc, char** argv) {
+  tensor::testing::register_test_environment();
+  ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
