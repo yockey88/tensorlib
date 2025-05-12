@@ -7,6 +7,8 @@
 #include <concepts>
 #include <functional>
 #include <iterator>
+#include <string>
+#include <vector>
 
 namespace tensor {
   namespace detail {
@@ -45,6 +47,8 @@ namespace tensor {
     };
 
     constexpr inline fold_left_fn fold_left;
+
+    std::vector<uint8_t> read_to_bytes(const std::string& filename);
 
   }  // namespace detail
 }  // namespace tensor

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <string>
 #include <utility>
 
 #include "core/types.hpp"
@@ -86,6 +87,18 @@ namespace tensor {
 
     constexpr real_t& operator[](natural_t i) { return values[i]; }
     constexpr real_t operator[](natural_t i) const { return values[i]; }
+
+    static std::string write_string(const vector& v) {
+      std::string result = "{ ";
+      for (natural_t i = 0; i < N; ++i) {
+        result += std::to_string(v[i]);
+        if (i != N - 1) {
+          result += ", ";
+        }
+      }
+      result += " }";
+      return result;
+    }
 
     std::array<real_t, N> values{ 0.f };
   };

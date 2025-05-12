@@ -1,4 +1,5 @@
 #include "linalgebra/vector.hpp"
+#include "neural/activation.hpp"
 #include "tensorlib.hpp"
 
 int main() {
@@ -236,6 +237,19 @@ int main() {
     constexpr tensor::vector<3> expected_product{ 14.f, 32.f, 50.f };
     constexpr tensor::vector<3> product = tensor::matrix_vector_product(m1, v1);
     static_assert(product == expected_product, "Matrix-vector product should be equal to expected product.");
+  }
+
+  {
+    static_assert(tensor::container_type<std::string>, "std::string should have a string converter.");
+    static_assert(tensor::container_type<std::vector<int>>, "std::vector<int> should have a string converter.");
+    static_assert(tensor::container_type<std::array<int, 3>>, "std::array<int, 3> should have a string converter.");
+
+    static_assert(tensor::core::has_string_writer<tensor::vector<3>>, "vector<3> should have a string writer.");
+    static_assert(tensor::core::has_string_writer<tensor::matrix<3, 3>>, "matrix<3, 3> should have a string writer.");
+
+    static_assert(tensor::core::has_string_converter<std::vector<int>>, "std::vector<int> should have a string converter.");
+    static_assert(tensor::core::has_string_converter<std::array<int, 3>>, "std::array<int, 3> should have a string converter.");
+    // static_assert(tensor::core::has_string_converter<std::span<int>>, "std::span<int> should have a string converter.");
   }
 
   return 0;

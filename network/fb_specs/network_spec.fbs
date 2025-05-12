@@ -1,0 +1,24 @@
+namespace tensor.network.config;
+
+table edge {
+  from:ulong;
+  to:ulong;
+  weight:double;
+}
+
+table graph {
+  nodes:[ulong];
+  edges:[edge];
+}
+
+enum network_type : short {
+  link_based
+}
+
+table network {
+  type:network_type;
+  connections:graph;
+}
+
+root_type network;
+file_identifier "TNET";

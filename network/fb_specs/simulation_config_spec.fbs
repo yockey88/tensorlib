@@ -1,0 +1,29 @@
+include "network_spec.fbs";
+include "simulation_layer.fbs";
+include "simulation_event.fbs";
+
+namespace tensor.simulation.config;
+
+enum simulation_type : short {
+  link_network_simulation = 0,
+}
+
+table parameters {
+  initial_network:tensor.network.config.network;
+  main_step_interval:short;
+}
+
+table simulation {
+  name:string;
+  description:string;
+
+  type:simulation_type;
+  
+  sim_params:parameters;
+
+  events:[event];
+  layers:[layer];
+}
+
+root_type simulation;
+file_identifier "TSIM";

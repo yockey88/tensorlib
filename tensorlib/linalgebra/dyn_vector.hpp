@@ -91,6 +91,10 @@ namespace tensor {
       real_t operator()(const dyn_vector& v) const;
     };
 
+    struct dyn_vector_rep_fn {
+      dyn_vector operator()(const real_t value, const natural_t size) const;
+    };
+
   }  // namespace detail
 
   constexpr inline detail::dyn_vector_sum_fn dyn_vector_sum{};
@@ -99,6 +103,7 @@ namespace tensor {
   constexpr inline detail::dyn_vector_scalar_product_fn dyn_vector_scalar_product{};
   constexpr inline detail::dyn_vector_dot_product_fn dyn_vector_dot_product{};
   constexpr inline detail::dyn_vector_magnitude_fn dyn_vector_magnitude{};
+  constexpr inline detail::dyn_vector_rep_fn dyn_vector_rep{};
 
   dyn_vector rand_vector(natural_t size, real_t min = -1.f, real_t max = 1.f);
 

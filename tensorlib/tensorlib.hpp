@@ -8,19 +8,20 @@
 #include "core/arena_allocator.hpp"
 #include "core/buffer.hpp"
 #include "core/defines.hpp"
+#include "core/misc_functions.hpp"
 #include "core/serialization.hpp"
 #include "core/timer.hpp"
 #include "core/types.hpp"
 #include "detail/constants.hpp"
 #include "detail/tensorlib_state.hpp"
 
+#include "graph/graph.hpp"
 #include "linalgebra/dyn_matrix.hpp"
 #include "linalgebra/dyn_vector.hpp"
 #include "linalgebra/matrix.hpp"
 #include "linalgebra/vector.hpp"
-#include "neural/activation.hpp"
-#include "neural/ann.hpp"
-#include "neural/layer.hpp"
+#include "random/mcmc.hpp"
+#include "random/rand.hpp"
 
 namespace tensor {
 
@@ -48,8 +49,6 @@ namespace tensor {
   using mat4x3 = matrix<4, 3>;
   using mat4x4 = matrix<4, 4>;
 
-  using network = neural::ann;
-
   template <typename T>
   using alloc = memory::arena_allocator<T>;
 
@@ -59,8 +58,8 @@ namespace tensor {
   }
 
   template <natural_t N>
-  static inline vectorx shape_vec(const vector<N>& vals) {
-    return vectorx::create(vals);
+  static inline dyn_vector shape_vec(const vector<N>& vals) {
+    return dyn_vector{ vals };
   }
 
   template <typename T>

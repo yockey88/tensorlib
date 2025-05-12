@@ -3,10 +3,16 @@
  **/
 #include <print>
 
+#include "core/types.hpp"
+
 #include "neural/activation.hpp"
+#include "neural/ann.hpp"
+#include "neural/layer.hpp"
 #include "tensorlib.hpp"
 
-namespace training_in {
+using ff_network = tensor::neural::ann;
+
+namespace training {
 
   constexpr static tensor::mat4x2 training_inputs = {
     {
@@ -25,43 +31,46 @@ namespace training_in {
     }
   };
 
-}  // namespace training_in
+}  // namespace training
 
 int main() {
   srand(time(nullptr));
   // tensor::init_tensor();
   {
-    tensor::dyn_matrix input = training_in::training_inputs;
-    tensor::dyn_matrix xor_outputs = training_in::xor_outputs;
+    tensor::dyn_matrix input = training::training_inputs;
+    tensor::dyn_matrix xor_outputs = training::xor_outputs;
 
-    tensor::network ann{ { 2, 2, 1 } };
-    ann.bind_affine_layer(1, tensor::neural::sigmoid_layer);
-    ann.bind_affine_layer(0, tensor::neural::sigmoid_layer);
+    std::array<tensor::natural_t, 3> topology = { 2, 2, 1 };
+
+    auto [rand_weights, rand_biases] = tensor::neural::random_parameters(topology, 0.f, 1.f);
+    std::vector<tensor::dyn_matrix> W = rand_weights;
+    std::vector<tensor::dyn_vector> b = rand_biases;
+
+    ff_network ann{ { 2, 2, 1 } };
+    ann.bind_affine_layer(0, W[0], b[0], tensor::neural::sigmoid_layer);
+    ann.bind_affine_layer(1, W[1], b[1], tensor::neural::sigmoid_layer);
 
     std::print("=========[XOR Model]=========================\n");
     std::print("ANN = {}\n", tensor::as_string(ann));
     std::print("=============================================\n");
 
-    tensor::real_t learning_rate = 1.f;
+    tensor::real_t learning_rate = 0.1f;
 
-    std::println("training xor function with ANN\n");
-    for (size_t i = 0; i < 50000; ++i) {
+    std::println("training model against xor data");
+    for (size_t i = 0; i < 500000; ++i) {
       tensor::real_t cost = tensor::neural::compute_cost(input, xor_outputs, ann);
 
-      tensor::network g = tensor::neural::backpropogate(ann, input, xor_outputs);
-      tensor::neural::learn(ann, g, learning_rate);
+      ff_network gradient = tensor::neural::backpropogate(ann, input, xor_outputs);
+      tensor::neural::learn(ann, gradient, learning_rate);
 
       if (i % 1000 == 0) {
         std::print("=========[cost [{}] = {}]=========================\n", i, cost);
         // std::print("ANN = {}\n", tensor::as_string(ann));
         // std::print("---------------------------------------------\n");
-        // std::print("gradient = {}\n", tensor::as_string(g));
+        // std::print("gradient = {}\n", tensor::as_string(gradient));
         // std::print("=============================================\n");
       }
     }
-
-    // tensor::real_t cost = tensor::neural::compute_cost(input, xor_outputs, ann);
-    // std::print("final cost = {}\n", cost);
 
     for (size_t i = 0; i < input.rows; ++i) {
       tensor::dyn_vector in_i = input.get_row(i);

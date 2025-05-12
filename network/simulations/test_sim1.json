@@ -1,0 +1,23 @@
+{
+  "name": "test_sim1",
+  "description": "Test simulation configuration for a simple network.",
+  "sim_params": {
+    "initial_network": {
+      "type": "link_based",
+      "connections": {
+        "nodes": [ 0, 1, 2, 3, 4 ],
+        "edges": [
+          { "from": 0, "to": 1, "weight": 1 },
+          { "from": 1, "to": 2, "weight": 1 },
+          { "from": 2, "to": 3, "weight": 1 },
+          { "from": 3, "to": 4, "weight": 1 }
+        ]
+      }
+    },
+    "main_step_interval": 1000
+  },
+  "events" : [],
+  "layers" : [
+    { "type": "SIM_COMM_LAYER", "path": "build/network/simulations/test_comm1.dll" }
+  ]
+}

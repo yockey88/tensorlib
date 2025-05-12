@@ -1,0 +1,13 @@
+namespace tensor.simulation;
+
+enum event_type : short {
+  START_SIMULATION_EVENT = 0,
+  STOP_SIMULATION_EVENT,
+}
+
+table event {
+  timestep:short;
+  type:event_type;
+}
+
+root_type event;

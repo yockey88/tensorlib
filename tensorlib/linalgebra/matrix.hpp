@@ -6,11 +6,14 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <format>
+#include <sstream>
 #include <utility>
 
 #include "core/types.hpp"
 
 #include "linalgebra/vector.hpp"
+
 
 namespace tensor {
 
@@ -128,6 +131,24 @@ namespace tensor {
     constexpr auto end() const noexcept { return values.end(); }
     constexpr auto size() const noexcept { return values.size(); }
     constexpr auto data() const noexcept { return values.data(); }
+
+    static std::string write_string(const matrix& m) {
+      std::stringstream ss;
+      /// TODO: fix spacing
+
+      ss << "\nMatrix [" << m.rows << " x " << m.cols << "]\n";
+      for (natural_t i = 0; i < m.rows; ++i) {
+        ss << "Row [" << i << "]: ";
+        for (natural_t j = 0; j < m.cols; ++j) {
+          ss << std::format("{:>.3f}", m(i, j));
+          if (j != m.cols - 1) {
+            ss << " | ";
+          }
+        }
+        ss << "\n";
+      }
+      return ss.str();
+    }
 
    private:
     std::array<real_t, data_size> values = { 0 };

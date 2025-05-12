@@ -1,7 +1,11 @@
 add_executable(tensorlib_tests)
 set_target_properties(tensorlib_tests PROPERTIES LINKER_LANGUAGE CXX)
 
-target_include_directories(tensorlib_tests PRIVATE ${TENSORLIB_INCLUDES})
+target_include_directories(tensorlib_tests 
+    PRIVATE 
+        ${TENSORLIB_INCLUDES} 
+        ${NEURAL_INCLUDES}
+)
 target_sources(tensorlib_tests
     PRIVATE
         main.cpp

@@ -4,9 +4,12 @@
 #include "linalgebra/dyn_vector.hpp"
 
 #include <cmath>
+#include <format>
 #include <sstream>
 
-#include "core/rand.hpp"
+#include "dyn_vector.hpp"
+#include "random/rand.hpp"
+
 
 namespace tensor {
 
@@ -59,7 +62,10 @@ namespace tensor {
     std::stringstream ss;
     ss << "\nVector [" << v.size << "]\n";
     for (natural_t i = 0; i < v.size; ++i) {
-      ss << " " << v(i);
+      ss << std::format("{:>.3f}", v(i));
+      if (i != v.size - 1) {
+        ss << " | ";
+      }
     }
     ss << "\n";
     return ss.str();
@@ -136,12 +142,20 @@ namespace tensor {
       return std::sqrt(result);
     }
 
+    dyn_vector dyn_vector_rep_fn::operator()(const real_t val, const natural_t size) const {
+      dyn_vector result{ size };
+      for (natural_t i = 0; i < size; ++i) {
+        result(i) = val;
+      }
+      return result;
+    }
+
   }  // namespace detail
 
   dyn_vector rand_vector(natural_t size, real_t min, real_t max) {
     dyn_vector v{ size };
     for (natural_t i = 0; i < size; ++i) {
-      v(i) = random::next_real() * (max - min) + min;
+      v(i) = random_generator::next_real() * (max - min) + min;
     }
     return v;
   }

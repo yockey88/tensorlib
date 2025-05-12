@@ -4,15 +4,44 @@
 #ifndef TENSORLIB_CORE_TYPES_HPP
 #define TENSORLIB_CORE_TYPES_HPP
 
-#include <cmath>
+#include <concepts>
 #include <cstdint>
-#include <limits>
+#include <memory>
+#include <optional>
 
 #include <gcem/gcem.hpp>
 
 #include "core/defines.hpp"
 
 namespace tensor {
+
+  template <typename CT>
+  concept has_size_method = requires(const CT& obj) {
+    { obj.size() } -> std::same_as<size_t>;
+  };
+
+  template <typename CT>
+  concept has_data_method =
+    requires(const CT& obj) {
+      { obj.data() } -> std::same_as<const typename CT::value_type*>;
+    } ||
+    requires(const CT& obj) {
+      { obj.data() } -> std::same_as<typename CT::value_type*>;
+    };
+
+  template <typename CT>
+  concept has_itr_methods = requires(const CT& obj) {
+    { obj.begin() } -> std::same_as<typename CT::const_iterator>;
+    { obj.end() } -> std::same_as<typename CT::const_iterator>;
+  };
+
+  template <typename CT>
+  concept container_type = requires(const CT& obj) {
+    /// is a container
+    { obj.size() } -> std::same_as<size_t>;
+    { obj.begin() } -> std::same_as<typename CT::const_iterator>;
+    { obj.end() } -> std::same_as<typename CT::const_iterator>;
+  };
 
   using index_t = uint64_t;
 
@@ -26,8 +55,32 @@ namespace tensor {
     float;
 #endif
 
-  namespace detail {
+  template <typename T>
+  using opt = std::optional<T>;
 
+  template <typename T>
+  using owning_ptr = std::unique_ptr<T>;
+
+  template <typename T>
+  using cref = std::shared_ptr<T>;
+
+  template <typename T, typename... Args>
+    requires requires() {
+      { std::make_unique<T>(std::declval<Args>()...) } -> std::same_as<owning_ptr<T>>;
+    }
+  owning_ptr<T> make_owning_ptr(Args&&... args) {
+    return std::make_unique<T>(std::forward<Args>(args)...);
+  }
+
+  template <typename T, typename... Args>
+    requires requires() {
+      { std::make_shared<T>(std::declval<Args>()...) } -> std::same_as<cref<T>>;
+    }
+  cref<T> make_cref(Args&&... args) {
+    return std::make_shared<T>(std::forward<Args>(args)...);
+  }
+
+  namespace detail {
     constexpr real_t abs(real_t x) {
       return x < 0 ? -x : x;
     }
@@ -64,6 +117,22 @@ namespace tensor {
         return 0;
       }
       return a / b;
+    }
+
+    constexpr bool epsilon_lt(real_t a, real_t b, real_t epsilon = default_epsilon()) {
+      return epsilon_difference(a, b, epsilon) < 0;
+    }
+
+    constexpr bool epsilon_lte(real_t a, real_t b, real_t epsilon = default_epsilon()) {
+      return epsilon_difference(a, b, epsilon) <= 0;
+    }
+
+    constexpr bool epsilon_gt(real_t a, real_t b, real_t epsilon = default_epsilon()) {
+      return epsilon_difference(a, b, epsilon) > 0;
+    }
+
+    constexpr bool epsilon_gte(real_t a, real_t b, real_t epsilon = default_epsilon()) {
+      return epsilon_difference(a, b, epsilon) >= 0;
     }
 
   }  // namespace detail

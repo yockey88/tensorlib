@@ -83,13 +83,13 @@ namespace tensor {
 
   using matrix_nxm = ref<dyn_matrix>;
 
-  static inline matrix_nxm make_matrix(natural_t rows, natural_t cols) {
-    return matrix_nxm::create(rows, cols);
+  static inline dyn_matrix make_matrix(natural_t rows, natural_t cols) {
+    return dyn_matrix(rows, cols);
   }
 
   template <natural_t R, natural_t C>
-  static inline matrix_nxm make_matrix(const matrix<R, C>& vals) {
-    return matrix_nxm::create(vals);
+  static inline dyn_matrix make_matrix(const matrix<R, C>& vals) {
+    return dyn_matrix(vals);
   }
 
   namespace detail {
@@ -112,6 +112,11 @@ namespace tensor {
 
     struct dyn_matrix_vector_product_fn {
       dyn_vector operator()(const dyn_matrix& m, const dyn_vector& v) const;
+      dyn_vector operator()(const dyn_vector& v, const dyn_matrix& m) const;
+    };
+
+    struct dyn_matrix_diagonalize_vector_fn {
+      dyn_matrix operator()(const dyn_vector& v) const;
     };
 
   }  // namespace detail
@@ -121,6 +126,7 @@ namespace tensor {
   constexpr inline detail::dyn_matrix_product_fn dyn_matrix_product{};
   constexpr inline detail::dyn_matrix_hadamard_product_fn dyn_matrix_hadamard_product{};
   constexpr inline detail::dyn_matrix_vector_product_fn dyn_matrix_vector_product{};
+  constexpr inline detail::dyn_matrix_diagonalize_vector_fn dyn_matrix_diagonalize_vector{};
 
   dyn_matrix rand_matrix(natural_t rows, natural_t cols, real_t min = -1.f, real_t max = 1.f);
 

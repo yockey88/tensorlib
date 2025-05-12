@@ -3,11 +3,11 @@
  **/
 #include "linalgebra/dyn_matrix.hpp"
 
+#include <format>
 #include <sstream>
 
-#include "core/rand.hpp"
-
 #include "linalgebra/dyn_vector.hpp"
+#include "random/rand.hpp"
 
 namespace tensor {
 
@@ -90,11 +90,12 @@ namespace tensor {
   std::string dyn_matrix::write_string(const dyn_matrix& m) {
     std::stringstream ss;
     /// TODO: fix spacing
+
     ss << "\nMatrix [" << m.rows << " x " << m.cols << "]\n";
     for (natural_t i = 0; i < m.rows; ++i) {
       ss << "Row [" << i << "]: ";
       for (natural_t j = 0; j < m.cols; ++j) {
-        ss << m(i, j);
+        ss << std::format("{:>.3f}", m(i, j));
         if (j != m.cols - 1) {
           ss << " | ";
         }
@@ -140,8 +141,8 @@ namespace tensor {
       }
 
       dyn_matrix res{ m1.rows, m1.cols };
-      for (natural_t i = 0; i < m1.rows; ++i) {
-        for (natural_t j = 0; j < m2.cols; ++j) {
+      for (natural_t j = 0; j < m2.cols; ++j) {
+        for (natural_t i = 0; i < m1.rows; ++i) {
           res(i, j) = dyn_vector_dot_product(m1.get_row(i), m2.get_col(j));
         }
       }
@@ -176,13 +177,33 @@ namespace tensor {
       return result;
     }
 
+    dyn_vector dyn_matrix_vector_product_fn::operator()(const dyn_vector& v, const dyn_matrix& m) const {
+      if (v.size != m.rows) {
+        throw std::invalid_argument("Vector and matrix dimensions do not match for multiplication.");
+      }
+
+      dyn_vector result{ m.cols };
+      for (natural_t j = 0; j < m.cols; ++j) {
+        result(j) = dyn_vector_dot_product(v, m.get_col(j));
+      }
+      return result;
+    }
+
+    dyn_matrix dyn_matrix_diagonalize_vector_fn::operator()(const dyn_vector& vector) const {
+      dyn_matrix res{ vector.size, vector.size };
+      for (natural_t i = 0; i < vector.size; ++i) {
+        res(i, i) = vector(i);
+      }
+      return res;
+    }
+
   }  // namespace detail
 
   dyn_matrix rand_matrix(natural_t rows, natural_t cols, const real_t min, const real_t max) {
     dyn_matrix m{ rows, cols };
     for (natural_t i = 0; i < rows; ++i) {
       for (natural_t j = 0; j < cols; ++j) {
-        m(i, j) = random::next_real() * (max - min) + min;
+        m(i, j) = random_generator::next_real() * (max - min) + min;
       }
     }
     return m;

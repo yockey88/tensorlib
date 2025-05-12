@@ -1,0 +1,14 @@
+namespace tensor.simulation;
+
+enum layer_type : short {
+  SIM_EVENT_LAYER = 0,
+  SIM_ANALYSIS_LAYER, 
+  SIM_COMM_LAYER,
+}
+
+table layer {
+  type:layer_type;
+  path:string;
+}
+
+root_type layer;
