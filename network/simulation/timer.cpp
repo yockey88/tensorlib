@@ -12,25 +12,51 @@ namespace tensor {
       return timer;
     }
 
-    void control_event_timer::start() {
+    void simulation_event_timer::start() {
       Timer().expires_after(interval);
-      Timer().async_wait(std::bind_front(&control_event_timer::on_timeout, this));
+      Timer().async_wait(std::bind_front(&simulation_event_timer::on_timeout, this));
     }
 
-    void control_event_timer::stop() {
+    void simulation_event_timer::stop() {
       Timer().cancel();
     }
 
-    void control_event_timer::on_timeout(const asio::error_code& ec) {
+    opt<integer_t> simulation_event_timer::get_event_id() const {
+      return event_id;
+    }
+
+    bool simulation_event_timer::is_recurring() const {
+      return should_restart;
+    }
+
+    void simulation_event_timer::set_event_id(integer_t id) {
+      event_id = id;
+    }
+
+    void simulation_event_timer::set_should_restart(bool flag) {
+      should_restart = flag;
+    }
+
+    void simulation_event_timer::on_timeout(const asio::error_code& ec) {
       if (ec == asio::error::operation_aborted) {
         // timer cancelled
         return;
       }
 
       if (!ec) {
-        callback->invoke();
+        handle_timeout();
         /// control event timer goes again until cancelled
-        start();
+        if (should_restart) {
+          start();
+        }
+      }
+    }
+
+    void control_event_timer::handle_timeout() {
+      if (callback != nullptr) {
+        callback->invoke();
+      } else {
+        std::print(std::cerr, "Control event timer callback is null\n");
       }
     }
 

@@ -21,4 +21,4 @@ table network {
 }
 
 root_type network;
-file_identifier "TNET";
+file_extension "tnet";

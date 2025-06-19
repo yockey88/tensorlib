@@ -5,14 +5,19 @@ target_sources(network
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/detail/netw_util.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/message/message.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/network/link_based_network.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/timer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/library_loader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/dyn_library.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/simulation_config.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/simulation_event.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/simulation_event_handler.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/layer_message_handler.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/layer_control_block.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/simulation_layer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/node_message_handler.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/simulation_node.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/session.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/session_message_handler.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/simulation_control.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/simulation_state.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/simulation/simulation.cpp
@@ -26,14 +31,6 @@ if (TENSORLIB_WINDOWS_BUILD)
             ${CMAKE_CURRENT_SOURCE_DIR}/simulation/platform/windows_library_loader.cpp    
     )
 endif()
-
-# target_compile_definitions(network
-#   PRIVATE
-#     TENSORLIB_EXTERN_DIR="${TENSORLIB_EXTERN_DIR}"
-#     TENSORLIB_WINDOWS_BUILD=${TENSORLIB_WINDOWS_BUILD}
-#     TENSORLIB_LINUX_BUILD=${TENSORLIB_LINUX_BUILD}
-#     TENSORLIB_OSX_BUILD=${TENSORLIB_OSX_BUILD}
-# )
 
 add_executable(network_driver)
 

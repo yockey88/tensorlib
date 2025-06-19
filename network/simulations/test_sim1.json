@@ -16,8 +16,24 @@
     },
     "main_step_interval": 1000
   },
-  "events" : [],
   "layers" : [
-    { "type": "SIM_COMM_LAYER", "path": "build/network/simulations/test_comm1.dll" }
+    {
+      "path": "build/network/simulations/test_comm1.dll",
+      "nodes": [0, 1, 2, 3, 4]
+    }
+  ],
+  "events": [
+    {
+      "id": 1,
+      "desc_type": "builtin_event",
+      "desc": {
+        "data_type": "node_activation_event",
+        "data" : {
+          "time_type": "time_point",
+          "time" : { "time": 2 }
+        }
+      },
+      "nodes": [0, 1, 2, 3, 4]
+    }
   ]
 }

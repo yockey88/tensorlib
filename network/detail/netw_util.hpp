@@ -7,7 +7,6 @@
 #include <flatbuffers/flatbuffers.h>
 
 #include "fb_specs/network_spec_generated.h"
-#include "fb_specs/simulation_config_spec_generated.h"
 #include "graph/graph.hpp"
 
 namespace tnet_config = tensor::network::config;

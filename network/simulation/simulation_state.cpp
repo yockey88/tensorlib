@@ -12,6 +12,8 @@
 #include "message/channel.hpp"
 #include "message/message.hpp"
 #include "simulation/simulation_event.hpp"
+#include "simulation_config.hpp"
+#include "simulation_layer.hpp"
 
 namespace tensor {
   namespace network {
@@ -20,14 +22,6 @@ namespace tensor {
 
     bool simulation_state::simulation_in_state(simulation_state_type state) const {
       return state == current_state;
-    }
-
-    void simulation_state::bind_layer(simulation_layer* layer) {
-      // TENSORLIB_ASSERT(layer != nullptr, "Layer is null");
-      // TENSORLIB_ASSERT(layer->get_simulation_state() == nullptr, "Layer already bound to a simulation state");
-
-      // layer->set_simulation_state(this);
-      // layers.push_back(layer);
     }
 
     void simulation_state::launch() {
@@ -39,6 +33,7 @@ namespace tensor {
 
         auto [this_tx_channel, sim_thread_rx_channel] = channel<message>::make_channel(tx_queue);
         auto [sim_thread_tx_channel, this_rx_channel] = channel<message>::make_channel(rx_queue);
+
         {
           std::lock_guard lock(state_mutex);
           this->tx_channel = std::move(this_tx_channel);
@@ -47,6 +42,7 @@ namespace tensor {
 
         simulation_main(std::move(sim_thread_tx_channel), std::move(sim_thread_rx_channel), stoken);
         set_current_state(SIMULATION_STOPPED);
+        std::println("");
       });
       while (simulation_in_state(SIMULATION_WAITING)) {
         std::this_thread::yield();
@@ -56,9 +52,7 @@ namespace tensor {
       TENSORLIB_ASSERT(rx_channel != nullptr, "Simulation thread rx channel is null");
 
       {
-        message init_msg;
-        init_msg.category = CONTROL;
-        init_msg.type = MSGID_THREAD_INITIALIZE;
+        message init_msg(CONTROL, THREAD_INITIALIZE);
         tx_channel->push(std::move(init_msg));
         wait_for_ack();
       }
@@ -69,35 +63,29 @@ namespace tensor {
       }
 
       {
-        message start_msg;
-        start_msg.category = CONTROL;
-        start_msg.type = MSGID_THREAD_START;
+        message start_msg(CONTROL, THREAD_START);
         tx_channel->push(std::move(start_msg));
         /// no ack for start
       }
     }
 
     void simulation_state::stop() {
+      checkpoints.running = false;
       simulation_thread.request_stop();
     }
 
     void simulation_state::cleanup() {
-      //// if we enter shutdown by other means then through main, ask the simulation to stop
-      ///     then wait for it to finish
-      if (simulation_in_state(SIMULATION_WAITING) || simulation_in_state(SIMULATION_PROCESSING)) {
-        handle_event(sim_event(SIM_EVENT_REQUEST_STOP));
-        while (!simulation_in_state(SIMULATION_SHUTTING_DOWN)) {
-          std::this_thread::yield();
-        }
+      while (!simulation_in_state(SIMULATION_SHUTTING_DOWN)) {
+        std::this_thread::yield();
       }
 
       {
-        message shutdown_msg;
-        shutdown_msg.category = CONTROL;
-        shutdown_msg.type = MSGID_THREAD_SHUTDOWN;
+        message shutdown_msg(CONTROL, THREAD_SHUTDOWN);
         tx_channel->push(std::move(shutdown_msg));
         wait_for_ack();
       }
+
+      sim_control->shutdown();
 
       /// let the thread exit
       while (!simulation_in_state(SIMULATION_STOPPED)) {
@@ -124,7 +112,7 @@ namespace tensor {
           TENSORLIB_ASSERT(tx_channel != nullptr, "Simulation thread tx channel is null");
           {
             message event_msg = event.get_message();
-            event_msg.category = SIMULATION_EVENT;
+            event_msg.set_category(SIMULATION_EVENT);
             tx_channel->push(std::move(event_msg));
           }
           break;
@@ -133,7 +121,7 @@ namespace tensor {
 
     /// simulation thread message handling
     void simulation_state::handle_message(const message& msg) {
-      switch (msg.category) {
+      switch (msg.get_category()) {
         case NOTIFICATION:
           break;
 
@@ -167,24 +155,56 @@ namespace tensor {
       }
     }
 
+    binding_point simulation_state::get_layer_endpoint(simulation_layer_type type) const {
+      binding_point endpoint;
+      endpoint.port = 0;
+      endpoint.port = 0;
+
+      switch (type) {
+        case SIM_COMM_LAYER:
+          if (config.comm_session_endpoint.has_value()) {
+            endpoint = config.comm_session_endpoint.value();
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      return endpoint;
+    }
+
+    binding_point simulation_state::get_control_endpoint() const {
+      binding_point endpoint;
+      endpoint.port = simulation_config::kControlPort;
+      endpoint.ip = 0x7f000001;  // localhost
+      return endpoint;
+    }
+
     void simulation_state::wait_for_ack() {
       TENSORLIB_ASSERT(tx_channel != nullptr, "Simulation thread tx channel is null");
+      bool done = false;
       do {
         opt<message> msg = rx_channel->await_message(std::chrono::milliseconds(10));
         if (!msg) {
           continue;
         }
 
-        if (msg->category == ACKNOWLEDGEMENT) {
-          if (msg->type == MSGID_ACK) {
-          } else if (msg->type == MSGID_NACK) {
+        if (msg->get_category() == ACKNOWLEDGEMENT) {
+          if (msg->get_id() == ACK) {
+            done = true;
+          } else if (msg->get_id() == NACK) {
             checkpoints.error_occurred = true;
             exit_code = -1;
           }
           break;
-        } else if (msg->category == ERROR_ALERT) {
+        } else if (msg->get_category() == ERROR_ALERT) {
           checkpoints.error_occurred = true;
           exit_code = -1;
+          break;
+        }
+
+        if (done) {
           break;
         }
       } while (!checkpoints.error_occurred);
@@ -218,18 +238,42 @@ namespace tensor {
       do {
         /// waiting means state is no longer transitioning, so simulation_state::launch() is unblocked
         set_current_state(SIMULATION_WAITING);
-        opt<message> msg = thread_data->rx_channel->await_message(std::chrono::milliseconds(10));
-        if (!msg) {
-          continue;
-        }
+        opt<message> msg = thread_data->rx_channel->await_message(std::chrono::milliseconds(100));
 
         set_current_state(SIMULATION_PROCESSING);
-        handle_message(*msg);
+        if (msg) {
+          handle_message(*msg);
+        }
+        /// no pending control message so we can manage simulation
+        else {
+          /// manage simulation:
+          /// 1. process events
+          /// 2. manage nodes/simulation
+          /// 3. manage layers
+          {
+            std::lock_guard l(event_mtx);
+            // event_handler->flush_events();
+          }
+          {
+            std::lock_guard lock(controL_mtx);
+            sim_control->poll();
+          }
+        }
       } while (checkpoints.running && !stoken.stop_requested() && !checkpoints.error_occurred);
 
       {
         std::lock_guard lock(event_mtx);
         event_handler->stop_all();
+      }
+
+      {
+        std::lock_guard lock(controL_mtx);
+        sim_control->shutdown_nodes();
+      }
+
+      while (!sim_control->nodes_cleaned_up()) {
+        sim_control->poll();
+        std::this_thread::yield();
       }
 
       set_current_state(SIMULATION_SHUTTING_DOWN);
@@ -241,7 +285,7 @@ namespace tensor {
 
     void simulation_state::do_main_timestep() {
       for (auto& layer : layer_map) {
-        // layer.second.layer->begin_timestep();
+        layer.second.layer->begin_timestep();
       }
 
       {
@@ -250,11 +294,11 @@ namespace tensor {
       }
 
       for (auto& layer : layer_map) {
-        // layer.second.layer->update();
+        layer.second.layer->update();
       }
 
       for (auto& layer : layer_map) {
-        // layer.second.layer->end_timestep();
+        layer.second.layer->end_timestep();
       }
     }
 
@@ -270,18 +314,18 @@ namespace tensor {
       } while (!checkpoints.initialized && !checkpoints.error_occurred && !thread_data->stoken.stop_requested());
 
       message ackmsg;
-      ackmsg.category = ACKNOWLEDGEMENT;
+      ackmsg.set_category(ACKNOWLEDGEMENT);
       if (checkpoints.error_occurred) {
-        ackmsg.type = MSGID_NACK;
+        ackmsg.set_id(NACK);
         exit_code = -1;
       } else {
-        ackmsg.type = MSGID_ACK;
+        ackmsg.set_id(ACK);
       }
       thread_data->tx_channel->push(std::move(ackmsg));
     }
 
     void simulation_state::handle_init_msg(const message& msg) {
-      if (msg.type == MSGID_THREAD_INITIALIZE) {
+      if (msg.get_id() == THREAD_INITIALIZE) {
         checkpoints.initialized = true;
 
         /// launch necessary nodes
@@ -293,17 +337,17 @@ namespace tensor {
           std::lock_guard lock(state_mutex);
           /// load layers from config
           for (auto& layer : config.layers) {
-            bind_layer(layer.path, layer.type);
+            bind_layer(layer.path);
           }
         }
       } else {
-        std::print("Invalid message type for thread initialization : {}:{}\n", msg.category, msg.type);
+        std::print("Invalid message type for thread initialization : {}:{}\n", msg.get_category(), msg.get_id());
         exit_code = -1;
         checkpoints.error_occurred = true;
       }
     }
 
-    void simulation_state::bind_layer(const std::filesystem::path& path, simulation_layer_type type) {
+    void simulation_state::bind_layer(const std::filesystem::path& path) {
       if (path.empty()) {
         std::print("Layer path is empty\n");
         return;
@@ -351,18 +395,20 @@ namespace tensor {
           return;
         }
 
-        simulation_layer* layer_ptr = sym.get_as_callable<simulation_layer* (*)(simulation_config&)>()(config);
+        simulation_layer* layer_ptr = sym.get_as_callable<simulation_layer* (*)(simulation_state*)>()(this);
         if (layer_ptr == nullptr) {
           std::print("Failed to create layer from library : {}\n", path.string());
           itr->second->unload_library();
           layer_libraries.erase(itr);
           return;
         }
+        layer_ptr->id = sim_control->get_next_node_id();
+        layer_ptr->control_block = make_owning_ptr<layer_control_block>(layer_ptr);
 
         sim_layer layer_data{
-          layer_ptr,
-          type,
-          delete_sym,
+          .layer = layer_ptr,
+          .type = layer_ptr->get_layer_type(),
+          .delete_fn = delete_sym,
         };
         auto [layer_itr, layer_success] = layer_map.insert({ FNV(path.string()), std::move(layer_data) });
         if (!layer_success) {
@@ -373,7 +419,10 @@ namespace tensor {
           return;
         }
 
-        layer_itr->second.layer->initialize();
+        auto& [id, ld] = *layer_itr;
+
+        ld.layer->initialize();
+        ld.layer->bind_control_endpoint(*io_context, get_control_endpoint());
       }
     }
 
@@ -389,12 +438,10 @@ namespace tensor {
     }
 
     void simulation_state::handle_start_msg(const message& msg) {
-      if (msg.type == MSGID_THREAD_START) {
+      if (msg.get_id() == THREAD_START) {
         checkpoints.running = true;
-
-        /// publish start message to all nodes
       } else {
-        std::print("Invalid message type for thread start : {}:{}\n", msg.category, msg.type);
+        std::print("Invalid message type for thread start : {}:{}\n", msg.get_category(), msg.get_id());
         checkpoints.error_occurred = true;
         exit_code = -1;
       }
@@ -412,49 +459,45 @@ namespace tensor {
       } while (!checkpoints.running && !checkpoints.error_occurred && !thread_data->stoken.stop_requested());
 
       message ackmsg;
-      ackmsg.category = ACKNOWLEDGEMENT;
+      ackmsg.set_category(ACKNOWLEDGEMENT);
       if (checkpoints.error_occurred) {
-        ackmsg.type = MSGID_NACK;
+        ackmsg.set_id(NACK);
         exit_code = -1;
       } else {
-        ackmsg.type = MSGID_ACK;
+        ackmsg.set_id(ACK);
       }
       thread_data->tx_channel->push(std::move(ackmsg));
     }
 
     void simulation_state::handle_shutdown_msg(const message& msg) {
-      if (msg.type == MSGID_THREAD_SHUTDOWN) {
+      if (msg.get_id() == THREAD_SHUTDOWN) {
         checkpoints.running = false;
         checkpoints.finalized = true;
 
-        std::print("Simulation thread shutting down\nclosing layers...");
         for (auto& layer : layer_map) {
           auto& layer_data = layer.second;
           layer_data.layer->shutdown();
-          // if (layer_data.layer != nullptr) {
-          //   layer_data.delete_fn.get_as_callable<void (*)(simulation_layer*)>()(layer_data.layer);
-          //   layer_data.layer = nullptr;
-          // }
+          if (layer_data.layer != nullptr) {
+            layer_data.delete_fn.get_as_callable<void (*)(simulation_layer*)>()(layer_data.layer);
+            layer_data.layer = nullptr;
+          }
         }
-        std::print("offloading libraries...");
         for (auto& lib : layer_libraries) {
+          lib.second->unload_library();
           lib.second = nullptr;
         }
-        std::print("deallocation memory...");
         layer_libraries.clear();
         layer_map.clear();
-
-        std::print("simulation thread shutdown complete\n");
       } else {
-        std::print("Invalid message type for thread shutdown : {}:{}\n", msg.category, msg.type);
+        std::println("Invalid message type for thread shutdown : {}:{}", msg.get_category(), msg.get_id());
         checkpoints.error_occurred = true;
         exit_code = -1;
       }
     }
 
     void simulation_state::handle_simulation_event(const message& msg) {
-      TENSORLIB_ASSERT(msg.category == SIMULATION_EVENT, "Invalid message category for simulation event");
-      TENSORLIB_ASSERT(msg.type == MSGID_SIM_EVENT, "Invalid message type for simulation event");
+      TENSORLIB_ASSERT(msg.get_category() == SIMULATION_EVENT, "Invalid message category for simulation event");
+      TENSORLIB_ASSERT(msg.get_id() == SIM_EVENT, "Invalid message type for simulation event");
       TENSORLIB_ASSERT(msg.data.size() > 0, "Simulation event message data is empty");
 
       auto event_msg = flexbuffers::GetRoot(msg.data).AsMap();
@@ -475,11 +518,12 @@ namespace tensor {
           do_main_timestep();
           break;
 
-        case NODE_EVENT_INITIALIZE:
+        case NODE_EVENT_ACTIVATE:
+          sim_control->activate_nodes(event.node_ids);
           break;
 
-        case NODE_EVENT_SHUTDOWN:
-          break;
+          // case NODE_EVENT_SHUTDOWN:
+          //   break;
 
         default: break;
       }

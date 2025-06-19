@@ -16,6 +16,19 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 25 &&
 namespace tensor {
 namespace simulation {
 
+struct time_point;
+
+struct time_block;
+
+struct node_activation_event;
+struct node_activation_eventBuilder;
+
+struct builtin_event;
+struct builtin_eventBuilder;
+
+struct user_event;
+struct user_eventBuilder;
+
 struct event;
 struct eventBuilder;
 
@@ -49,35 +62,533 @@ inline const char *EnumNameevent_type(event_type e) {
   return EnumNamesevent_type()[index];
 }
 
-struct event FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef eventBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_TIMESTEP = 4,
-    VT_TYPE = 6
+enum event_time : uint8_t {
+  event_time_NONE = 0,
+  event_time_time_point = 1,
+  event_time_time_block = 2,
+  event_time_MIN = event_time_NONE,
+  event_time_MAX = event_time_time_block
+};
+
+inline const event_time (&EnumValuesevent_time())[3] {
+  static const event_time values[] = {
+    event_time_NONE,
+    event_time_time_point,
+    event_time_time_block
   };
-  int16_t timestep() const {
-    return GetField<int16_t>(VT_TIMESTEP, 0);
+  return values;
+}
+
+inline const char * const *EnumNamesevent_time() {
+  static const char * const names[4] = {
+    "NONE",
+    "time_point",
+    "time_block",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameevent_time(event_time e) {
+  if (::flatbuffers::IsOutRange(e, event_time_NONE, event_time_time_block)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesevent_time()[index];
+}
+
+template<typename T> struct event_timeTraits {
+  static const event_time enum_value = event_time_NONE;
+};
+
+template<> struct event_timeTraits<tensor::simulation::time_point> {
+  static const event_time enum_value = event_time_time_point;
+};
+
+template<> struct event_timeTraits<tensor::simulation::time_block> {
+  static const event_time enum_value = event_time_time_block;
+};
+
+bool Verifyevent_time(::flatbuffers::Verifier &verifier, const void *obj, event_time type);
+bool Verifyevent_timeVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<uint8_t> *types);
+
+enum event_data : uint8_t {
+  event_data_NONE = 0,
+  event_data_node_activation_event = 1,
+  event_data_MIN = event_data_NONE,
+  event_data_MAX = event_data_node_activation_event
+};
+
+inline const event_data (&EnumValuesevent_data())[2] {
+  static const event_data values[] = {
+    event_data_NONE,
+    event_data_node_activation_event
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesevent_data() {
+  static const char * const names[3] = {
+    "NONE",
+    "node_activation_event",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameevent_data(event_data e) {
+  if (::flatbuffers::IsOutRange(e, event_data_NONE, event_data_node_activation_event)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesevent_data()[index];
+}
+
+template<typename T> struct event_dataTraits {
+  static const event_data enum_value = event_data_NONE;
+};
+
+template<> struct event_dataTraits<tensor::simulation::node_activation_event> {
+  static const event_data enum_value = event_data_node_activation_event;
+};
+
+bool Verifyevent_data(::flatbuffers::Verifier &verifier, const void *obj, event_data type);
+bool Verifyevent_dataVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<uint8_t> *types);
+
+enum event_description : uint8_t {
+  event_description_NONE = 0,
+  event_description_builtin_event = 1,
+  event_description_user_event = 2,
+  event_description_MIN = event_description_NONE,
+  event_description_MAX = event_description_user_event
+};
+
+inline const event_description (&EnumValuesevent_description())[3] {
+  static const event_description values[] = {
+    event_description_NONE,
+    event_description_builtin_event,
+    event_description_user_event
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesevent_description() {
+  static const char * const names[4] = {
+    "NONE",
+    "builtin_event",
+    "user_event",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameevent_description(event_description e) {
+  if (::flatbuffers::IsOutRange(e, event_description_NONE, event_description_user_event)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesevent_description()[index];
+}
+
+template<typename T> struct event_descriptionTraits {
+  static const event_description enum_value = event_description_NONE;
+};
+
+template<> struct event_descriptionTraits<tensor::simulation::builtin_event> {
+  static const event_description enum_value = event_description_builtin_event;
+};
+
+template<> struct event_descriptionTraits<tensor::simulation::user_event> {
+  static const event_description enum_value = event_description_user_event;
+};
+
+bool Verifyevent_description(::flatbuffers::Verifier &verifier, const void *obj, event_description type);
+bool Verifyevent_descriptionVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<uint8_t> *types);
+
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) time_point FLATBUFFERS_FINAL_CLASS {
+ private:
+  uint64_t time_;
+
+ public:
+  time_point()
+      : time_(0) {
   }
-  tensor::simulation::event_type type() const {
-    return static_cast<tensor::simulation::event_type>(GetField<int16_t>(VT_TYPE, 0));
+  time_point(uint64_t _time)
+      : time_(::flatbuffers::EndianScalar(_time)) {
+  }
+  uint64_t time() const {
+    return ::flatbuffers::EndianScalar(time_);
+  }
+};
+FLATBUFFERS_STRUCT_END(time_point, 8);
+
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) time_block FLATBUFFERS_FINAL_CLASS {
+ private:
+  uint64_t interval_;
+  uint64_t start_;
+  uint64_t stop_;
+
+ public:
+  time_block()
+      : interval_(0),
+        start_(0),
+        stop_(0) {
+  }
+  time_block(uint64_t _interval, uint64_t _start, uint64_t _stop)
+      : interval_(::flatbuffers::EndianScalar(_interval)),
+        start_(::flatbuffers::EndianScalar(_start)),
+        stop_(::flatbuffers::EndianScalar(_stop)) {
+  }
+  uint64_t interval() const {
+    return ::flatbuffers::EndianScalar(interval_);
+  }
+  uint64_t start() const {
+    return ::flatbuffers::EndianScalar(start_);
+  }
+  uint64_t stop() const {
+    return ::flatbuffers::EndianScalar(stop_);
+  }
+};
+FLATBUFFERS_STRUCT_END(time_block, 24);
+
+struct node_activation_event FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef node_activation_eventBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NODES = 4,
+    VT_TIME_TYPE = 6,
+    VT_TIME = 8
+  };
+  const ::flatbuffers::Vector<uint64_t> *nodes() const {
+    return GetPointer<const ::flatbuffers::Vector<uint64_t> *>(VT_NODES);
+  }
+  tensor::simulation::event_time time_type() const {
+    return static_cast<tensor::simulation::event_time>(GetField<uint8_t>(VT_TIME_TYPE, 0));
+  }
+  const void *time() const {
+    return GetPointer<const void *>(VT_TIME);
+  }
+  template<typename T> const T *time_as() const;
+  const tensor::simulation::time_point *time_as_time_point() const {
+    return time_type() == tensor::simulation::event_time_time_point ? static_cast<const tensor::simulation::time_point *>(time()) : nullptr;
+  }
+  const tensor::simulation::time_block *time_as_time_block() const {
+    return time_type() == tensor::simulation::event_time_time_block ? static_cast<const tensor::simulation::time_block *>(time()) : nullptr;
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int16_t>(verifier, VT_TIMESTEP, 2) &&
-           VerifyField<int16_t>(verifier, VT_TYPE, 2) &&
+           VerifyOffset(verifier, VT_NODES) &&
+           verifier.VerifyVector(nodes()) &&
+           VerifyField<uint8_t>(verifier, VT_TIME_TYPE, 1) &&
+           VerifyOffset(verifier, VT_TIME) &&
+           Verifyevent_time(verifier, time(), time_type()) &&
            verifier.EndTable();
   }
 };
+
+template<> inline const tensor::simulation::time_point *node_activation_event::time_as<tensor::simulation::time_point>() const {
+  return time_as_time_point();
+}
+
+template<> inline const tensor::simulation::time_block *node_activation_event::time_as<tensor::simulation::time_block>() const {
+  return time_as_time_block();
+}
+
+struct node_activation_eventBuilder {
+  typedef node_activation_event Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_nodes(::flatbuffers::Offset<::flatbuffers::Vector<uint64_t>> nodes) {
+    fbb_.AddOffset(node_activation_event::VT_NODES, nodes);
+  }
+  void add_time_type(tensor::simulation::event_time time_type) {
+    fbb_.AddElement<uint8_t>(node_activation_event::VT_TIME_TYPE, static_cast<uint8_t>(time_type), 0);
+  }
+  void add_time(::flatbuffers::Offset<void> time) {
+    fbb_.AddOffset(node_activation_event::VT_TIME, time);
+  }
+  explicit node_activation_eventBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<node_activation_event> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<node_activation_event>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<node_activation_event> Createnode_activation_event(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint64_t>> nodes = 0,
+    tensor::simulation::event_time time_type = tensor::simulation::event_time_NONE,
+    ::flatbuffers::Offset<void> time = 0) {
+  node_activation_eventBuilder builder_(_fbb);
+  builder_.add_time(time);
+  builder_.add_nodes(nodes);
+  builder_.add_time_type(time_type);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<node_activation_event> Createnode_activation_eventDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<uint64_t> *nodes = nullptr,
+    tensor::simulation::event_time time_type = tensor::simulation::event_time_NONE,
+    ::flatbuffers::Offset<void> time = 0) {
+  auto nodes__ = nodes ? _fbb.CreateVector<uint64_t>(*nodes) : 0;
+  return tensor::simulation::Createnode_activation_event(
+      _fbb,
+      nodes__,
+      time_type,
+      time);
+}
+
+struct builtin_event FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef builtin_eventBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NAME = 4,
+    VT_TIME_TYPE = 6,
+    VT_TIME = 8,
+    VT_DATA_TYPE = 10,
+    VT_DATA = 12
+  };
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  }
+  tensor::simulation::event_time time_type() const {
+    return static_cast<tensor::simulation::event_time>(GetField<uint8_t>(VT_TIME_TYPE, 0));
+  }
+  const void *time() const {
+    return GetPointer<const void *>(VT_TIME);
+  }
+  template<typename T> const T *time_as() const;
+  const tensor::simulation::time_point *time_as_time_point() const {
+    return time_type() == tensor::simulation::event_time_time_point ? static_cast<const tensor::simulation::time_point *>(time()) : nullptr;
+  }
+  const tensor::simulation::time_block *time_as_time_block() const {
+    return time_type() == tensor::simulation::event_time_time_block ? static_cast<const tensor::simulation::time_block *>(time()) : nullptr;
+  }
+  tensor::simulation::event_data data_type() const {
+    return static_cast<tensor::simulation::event_data>(GetField<uint8_t>(VT_DATA_TYPE, 0));
+  }
+  const void *data() const {
+    return GetPointer<const void *>(VT_DATA);
+  }
+  template<typename T> const T *data_as() const;
+  const tensor::simulation::node_activation_event *data_as_node_activation_event() const {
+    return data_type() == tensor::simulation::event_data_node_activation_event ? static_cast<const tensor::simulation::node_activation_event *>(data()) : nullptr;
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyField<uint8_t>(verifier, VT_TIME_TYPE, 1) &&
+           VerifyOffset(verifier, VT_TIME) &&
+           Verifyevent_time(verifier, time(), time_type()) &&
+           VerifyField<uint8_t>(verifier, VT_DATA_TYPE, 1) &&
+           VerifyOffset(verifier, VT_DATA) &&
+           Verifyevent_data(verifier, data(), data_type()) &&
+           verifier.EndTable();
+  }
+};
+
+template<> inline const tensor::simulation::time_point *builtin_event::time_as<tensor::simulation::time_point>() const {
+  return time_as_time_point();
+}
+
+template<> inline const tensor::simulation::time_block *builtin_event::time_as<tensor::simulation::time_block>() const {
+  return time_as_time_block();
+}
+
+template<> inline const tensor::simulation::node_activation_event *builtin_event::data_as<tensor::simulation::node_activation_event>() const {
+  return data_as_node_activation_event();
+}
+
+struct builtin_eventBuilder {
+  typedef builtin_event Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
+    fbb_.AddOffset(builtin_event::VT_NAME, name);
+  }
+  void add_time_type(tensor::simulation::event_time time_type) {
+    fbb_.AddElement<uint8_t>(builtin_event::VT_TIME_TYPE, static_cast<uint8_t>(time_type), 0);
+  }
+  void add_time(::flatbuffers::Offset<void> time) {
+    fbb_.AddOffset(builtin_event::VT_TIME, time);
+  }
+  void add_data_type(tensor::simulation::event_data data_type) {
+    fbb_.AddElement<uint8_t>(builtin_event::VT_DATA_TYPE, static_cast<uint8_t>(data_type), 0);
+  }
+  void add_data(::flatbuffers::Offset<void> data) {
+    fbb_.AddOffset(builtin_event::VT_DATA, data);
+  }
+  explicit builtin_eventBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<builtin_event> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<builtin_event>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<builtin_event> Createbuiltin_event(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    tensor::simulation::event_time time_type = tensor::simulation::event_time_NONE,
+    ::flatbuffers::Offset<void> time = 0,
+    tensor::simulation::event_data data_type = tensor::simulation::event_data_NONE,
+    ::flatbuffers::Offset<void> data = 0) {
+  builtin_eventBuilder builder_(_fbb);
+  builder_.add_data(data);
+  builder_.add_time(time);
+  builder_.add_name(name);
+  builder_.add_data_type(data_type);
+  builder_.add_time_type(time_type);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<builtin_event> Createbuiltin_eventDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *name = nullptr,
+    tensor::simulation::event_time time_type = tensor::simulation::event_time_NONE,
+    ::flatbuffers::Offset<void> time = 0,
+    tensor::simulation::event_data data_type = tensor::simulation::event_data_NONE,
+    ::flatbuffers::Offset<void> data = 0) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  return tensor::simulation::Createbuiltin_event(
+      _fbb,
+      name__,
+      time_type,
+      time,
+      data_type,
+      data);
+}
+
+struct user_event FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef user_eventBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_TIME_TYPE = 4,
+    VT_TIME = 6
+  };
+  tensor::simulation::event_time time_type() const {
+    return static_cast<tensor::simulation::event_time>(GetField<uint8_t>(VT_TIME_TYPE, 0));
+  }
+  const void *time() const {
+    return GetPointer<const void *>(VT_TIME);
+  }
+  template<typename T> const T *time_as() const;
+  const tensor::simulation::time_point *time_as_time_point() const {
+    return time_type() == tensor::simulation::event_time_time_point ? static_cast<const tensor::simulation::time_point *>(time()) : nullptr;
+  }
+  const tensor::simulation::time_block *time_as_time_block() const {
+    return time_type() == tensor::simulation::event_time_time_block ? static_cast<const tensor::simulation::time_block *>(time()) : nullptr;
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint8_t>(verifier, VT_TIME_TYPE, 1) &&
+           VerifyOffset(verifier, VT_TIME) &&
+           Verifyevent_time(verifier, time(), time_type()) &&
+           verifier.EndTable();
+  }
+};
+
+template<> inline const tensor::simulation::time_point *user_event::time_as<tensor::simulation::time_point>() const {
+  return time_as_time_point();
+}
+
+template<> inline const tensor::simulation::time_block *user_event::time_as<tensor::simulation::time_block>() const {
+  return time_as_time_block();
+}
+
+struct user_eventBuilder {
+  typedef user_event Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_time_type(tensor::simulation::event_time time_type) {
+    fbb_.AddElement<uint8_t>(user_event::VT_TIME_TYPE, static_cast<uint8_t>(time_type), 0);
+  }
+  void add_time(::flatbuffers::Offset<void> time) {
+    fbb_.AddOffset(user_event::VT_TIME, time);
+  }
+  explicit user_eventBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<user_event> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<user_event>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<user_event> Createuser_event(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    tensor::simulation::event_time time_type = tensor::simulation::event_time_NONE,
+    ::flatbuffers::Offset<void> time = 0) {
+  user_eventBuilder builder_(_fbb);
+  builder_.add_time(time);
+  builder_.add_time_type(time_type);
+  return builder_.Finish();
+}
+
+struct event FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef eventBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_ID = 4,
+    VT_DESC_TYPE = 6,
+    VT_DESC = 8,
+    VT_NODES = 10
+  };
+  ::flatbuffers::Optional<uint64_t> id() const {
+    return GetOptional<uint64_t, uint64_t>(VT_ID);
+  }
+  tensor::simulation::event_description desc_type() const {
+    return static_cast<tensor::simulation::event_description>(GetField<uint8_t>(VT_DESC_TYPE, 0));
+  }
+  const void *desc() const {
+    return GetPointer<const void *>(VT_DESC);
+  }
+  template<typename T> const T *desc_as() const;
+  const tensor::simulation::builtin_event *desc_as_builtin_event() const {
+    return desc_type() == tensor::simulation::event_description_builtin_event ? static_cast<const tensor::simulation::builtin_event *>(desc()) : nullptr;
+  }
+  const tensor::simulation::user_event *desc_as_user_event() const {
+    return desc_type() == tensor::simulation::event_description_user_event ? static_cast<const tensor::simulation::user_event *>(desc()) : nullptr;
+  }
+  const ::flatbuffers::Vector<uint64_t> *nodes() const {
+    return GetPointer<const ::flatbuffers::Vector<uint64_t> *>(VT_NODES);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint64_t>(verifier, VT_ID, 8) &&
+           VerifyField<uint8_t>(verifier, VT_DESC_TYPE, 1) &&
+           VerifyOffset(verifier, VT_DESC) &&
+           Verifyevent_description(verifier, desc(), desc_type()) &&
+           VerifyOffset(verifier, VT_NODES) &&
+           verifier.VerifyVector(nodes()) &&
+           verifier.EndTable();
+  }
+};
+
+template<> inline const tensor::simulation::builtin_event *event::desc_as<tensor::simulation::builtin_event>() const {
+  return desc_as_builtin_event();
+}
+
+template<> inline const tensor::simulation::user_event *event::desc_as<tensor::simulation::user_event>() const {
+  return desc_as_user_event();
+}
 
 struct eventBuilder {
   typedef event Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_timestep(int16_t timestep) {
-    fbb_.AddElement<int16_t>(event::VT_TIMESTEP, timestep, 0);
+  void add_id(uint64_t id) {
+    fbb_.AddElement<uint64_t>(event::VT_ID, id);
   }
-  void add_type(tensor::simulation::event_type type) {
-    fbb_.AddElement<int16_t>(event::VT_TYPE, static_cast<int16_t>(type), 0);
+  void add_desc_type(tensor::simulation::event_description desc_type) {
+    fbb_.AddElement<uint8_t>(event::VT_DESC_TYPE, static_cast<uint8_t>(desc_type), 0);
+  }
+  void add_desc(::flatbuffers::Offset<void> desc) {
+    fbb_.AddOffset(event::VT_DESC, desc);
+  }
+  void add_nodes(::flatbuffers::Offset<::flatbuffers::Vector<uint64_t>> nodes) {
+    fbb_.AddOffset(event::VT_NODES, nodes);
   }
   explicit eventBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -92,12 +603,112 @@ struct eventBuilder {
 
 inline ::flatbuffers::Offset<event> Createevent(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    int16_t timestep = 0,
-    tensor::simulation::event_type type = tensor::simulation::event_type_START_SIMULATION_EVENT) {
+    ::flatbuffers::Optional<uint64_t> id = ::flatbuffers::nullopt,
+    tensor::simulation::event_description desc_type = tensor::simulation::event_description_NONE,
+    ::flatbuffers::Offset<void> desc = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint64_t>> nodes = 0) {
   eventBuilder builder_(_fbb);
-  builder_.add_type(type);
-  builder_.add_timestep(timestep);
+  if(id) { builder_.add_id(*id); }
+  builder_.add_nodes(nodes);
+  builder_.add_desc(desc);
+  builder_.add_desc_type(desc_type);
   return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<event> CreateeventDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Optional<uint64_t> id = ::flatbuffers::nullopt,
+    tensor::simulation::event_description desc_type = tensor::simulation::event_description_NONE,
+    ::flatbuffers::Offset<void> desc = 0,
+    const std::vector<uint64_t> *nodes = nullptr) {
+  auto nodes__ = nodes ? _fbb.CreateVector<uint64_t>(*nodes) : 0;
+  return tensor::simulation::Createevent(
+      _fbb,
+      id,
+      desc_type,
+      desc,
+      nodes__);
+}
+
+inline bool Verifyevent_time(::flatbuffers::Verifier &verifier, const void *obj, event_time type) {
+  switch (type) {
+    case event_time_NONE: {
+      return true;
+    }
+    case event_time_time_point: {
+      return verifier.VerifyField<tensor::simulation::time_point>(static_cast<const uint8_t *>(obj), 0, 8);
+    }
+    case event_time_time_block: {
+      return verifier.VerifyField<tensor::simulation::time_block>(static_cast<const uint8_t *>(obj), 0, 8);
+    }
+    default: return true;
+  }
+}
+
+inline bool Verifyevent_timeVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
+  if (values->size() != types->size()) return false;
+  for (::flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
+    if (!Verifyevent_time(
+        verifier,  values->Get(i), types->GetEnum<event_time>(i))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool Verifyevent_data(::flatbuffers::Verifier &verifier, const void *obj, event_data type) {
+  switch (type) {
+    case event_data_NONE: {
+      return true;
+    }
+    case event_data_node_activation_event: {
+      auto ptr = reinterpret_cast<const tensor::simulation::node_activation_event *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+
+inline bool Verifyevent_dataVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
+  if (values->size() != types->size()) return false;
+  for (::flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
+    if (!Verifyevent_data(
+        verifier,  values->Get(i), types->GetEnum<event_data>(i))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool Verifyevent_description(::flatbuffers::Verifier &verifier, const void *obj, event_description type) {
+  switch (type) {
+    case event_description_NONE: {
+      return true;
+    }
+    case event_description_builtin_event: {
+      auto ptr = reinterpret_cast<const tensor::simulation::builtin_event *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case event_description_user_event: {
+      auto ptr = reinterpret_cast<const tensor::simulation::user_event *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+
+inline bool Verifyevent_descriptionVector(::flatbuffers::Verifier &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
+  if (values->size() != types->size()) return false;
+  for (::flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
+    if (!Verifyevent_description(
+        verifier,  values->Get(i), types->GetEnum<event_description>(i))) {
+      return false;
+    }
+  }
+  return true;
 }
 
 inline const tensor::simulation::event *Getevent(const void *buf) {

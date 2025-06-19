@@ -56,7 +56,6 @@ namespace tensor {
       owning_ptr<asio::io_context> io_context = nullptr;
       std::jthread io_thread;
 
-      void bind_signal_handlers();
       void signal_handler(const asio::error_code& ec, int signal_number);
 
       void bind_control_events();

@@ -5,7 +5,7 @@
 #define TENSORLIB_CORE_SERIALIZATION_HPP
 
 #include <concepts>
-#include <span>
+#include <format>
 #include <sstream>
 #include <string>
 
@@ -79,5 +79,14 @@ namespace tensor {
 
   }  // namespace core
 }  // namespace tensor
+
+template <typename T>
+  requires tensor::core::has_string_writer<T>
+struct std::formatter<T> : public std::formatter<std::string_view> {
+  template <typename FormatContext>
+  auto format(const T& obj, FormatContext& ctx) const {
+    return std::formatter<std::string_view>::format(T::write_string(obj), ctx);
+  }
+};
 
 #endif  // TENSORLIB_CORE_SERIALIZATION_HPP

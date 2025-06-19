@@ -9,41 +9,36 @@
 
 namespace tensor {
   namespace network {
-    namespace detail {
-      namespace {
 
-        static inline void build(message& message, const simulation_event& event) {
-          flexbuffers::Builder builder;
-          builder.Map([&]() {
-            builder.Int("id", event.id);
-            builder.Int("time", event.time);
-            builder.Vector("node_ids", [&]() {
-              for (const auto& node_id : event.node_ids) {
-                builder.Int(node_id);
-              }
-            });
-            builder.Int("type", event.type);
-          });
-
-          switch (event.type) {
-            default:
-              break;
-          }
-
-          builder.Finish();
-
-          const auto& buffer = builder.GetBuffer();
-          std::ranges::copy(builder.GetBuffer().data(), buffer.data() + buffer.size(), std::back_inserter(message.data));
-        }
-
-      }  // namespace
-    }  // namespace detail
+    event_time& event_time::operator=(const event_time& other) {
+      min_step = other.min_step;
+      max_step = other.max_step;
+      return *this;
+    }
 
     message simulation_event::get_message() const {
-      message msg;
-      msg.category = SIMULATION_EVENT;
-      msg.type = MSGID_SIM_EVENT;
-      detail::build(msg, *this);
+      message msg(SIMULATION_EVENT, SIM_EVENT);
+      flexbuffers::Builder builder;
+      builder.Map([&]() {
+        builder.Int("id", id);
+        // builder.Int("time", time);
+        builder.Vector("node_ids", [&]() {
+          for (const auto& node_id : node_ids) {
+            builder.Int(node_id);
+          }
+        });
+        builder.Int("type", type);
+      });
+
+      switch (type) {
+        default:
+          break;
+      }
+
+      builder.Finish();
+
+      const auto& buffer = builder.GetBuffer();
+      std::ranges::copy(builder.GetBuffer().data(), buffer.data() + buffer.size(), std::back_inserter(msg.data));
 
       return msg;
     }
@@ -52,10 +47,10 @@ namespace tensor {
       std::stringstream ss;
       ss << "\nSimulation Event: [\n";
       ss << "  id: " << event.id << "\n";
-      ss << "  time: " << event.time << "\n";
+      ss << "  time: { min = " << event.time.min_step << " , max = " << event.time.max_step << " }\n";
       ss << "  node_ids: [\n";
       if (event.node_ids.empty()) {
-        ss << "    <empty>\n";
+        ss << "    <all-nodes>\n";
       } else {
         ss << "    ";
         for (natural_t i = 0; i < event.node_ids.size(); ++i) {
@@ -64,9 +59,10 @@ namespace tensor {
             ss << ", ";
           }
         }
+        ss << "\n";
       }
       ss << "  ]\n";
-      ss << "  type: " << magic_enum::enum_name(event.type) << "\n";
+      ss << std::format("  type: {}\n", magic_enum::enum_name(event.type));
       ss << "]\n";
       return ss.str();
     }

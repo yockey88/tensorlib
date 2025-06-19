@@ -5,9 +5,49 @@ enum event_type : short {
   STOP_SIMULATION_EVENT,
 }
 
+struct time_point {
+  time:ulong;
+}
+
+struct time_block {
+  interval:ulong;
+  start:ulong;
+  stop:ulong;
+}
+
+union event_time {
+  time_point,
+  time_block
+}
+
+table node_activation_event {
+  nodes:[ulong];
+  time:event_time;
+}
+
+union event_data {
+  node_activation_event,
+}
+
+table builtin_event {
+  name:string;
+  time:event_time;
+  data:event_data;
+}
+
+table user_event {
+  time:event_time;
+}
+
+union event_description {
+  builtin_event,
+  user_event
+}
+
 table event {
-  timestep:short;
-  type:event_type;
+  id:ulong = null;
+  desc:event_description;
+  nodes:[ulong];
 }
 
 root_type event;

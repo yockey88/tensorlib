@@ -25,6 +25,45 @@ namespace tensor {
     };
 
     template <typename Fn>
+    void bfs(graph& g, natural_t start_node, Fn visit_node);
+
+    template <typename Fn>
+    void dfs(graph& g, natural_t start_node, Fn visit_node);
+
+  }  // namespace graph
+}  // namespace tensor
+
+namespace tg = tensor::graph;
+
+int main() {
+  tg::graph g = tg::new_graph(
+    {
+      { 1, 2 },
+      { 0 },
+      { 0, 3, 4 },
+      { 2 },
+      { 2 },
+    }
+  );
+  tensor::dyn_matrix adj_matrix = tg::get_adjacency_matrix(g);
+  std::println("Graph: {}", tensor::as_string(g));
+  std::println("Adjacency Matrix:\n{}", tensor::as_string(adj_matrix));
+
+  tg::bfs(g, 0, [](const tg::graph& g, tensor::natural_t node_id, tensor::real_t weight) {
+    std::println("Visited node {} with weight {}", node_id, weight);
+  });
+  std::println("");
+  tg::dfs(g, 0, [](const tg::graph& g, tensor::natural_t node_id, tensor::real_t weight) {
+    std::println("Visited node {} with weight {}", node_id, weight);
+  });
+
+  return 0;
+}
+
+namespace tensor {
+  namespace graph {
+
+    template <typename Fn>
     void bfs(graph& g, natural_t start_node, Fn visit_node) {
       std::vector<bool_wrapper> visited(g.nodes.size(), false);
       std::queue<weighted_node> queue;
@@ -82,29 +121,3 @@ namespace tensor {
 
   }  // namespace graph
 }  // namespace tensor
-namespace tg = tensor::graph;
-
-int main() {
-  tg::graph g = tg::new_graph(
-    {
-      { 1, 2 },
-      { 0 },
-      { 0, 3, 4 },
-      { 2 },
-      { 2 },
-    }
-  );
-  tensor::dyn_matrix adj_matrix = tg::get_adjacency_matrix(g);
-  std::println("Graph: {}", tensor::as_string(g));
-  std::println("Adjacency Matrix:\n{}", tensor::as_string(adj_matrix));
-
-  tg::bfs(g, 0, [](const tg::graph& g, tensor::natural_t node_id, tensor::real_t weight) {
-    std::println("Visited node {} with weight {}", node_id, weight);
-  });
-  std::println("");
-  tg::dfs(g, 0, [](const tg::graph& g, tensor::natural_t node_id, tensor::real_t weight) {
-    std::println("Visited node {} with weight {}", node_id, weight);
-  });
-
-  return 0;
-}

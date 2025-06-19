@@ -1,11 +1,16 @@
 include "network_spec.fbs";
-include "simulation_layer.fbs";
 include "simulation_event.fbs";
+include "binding_point.fbs";
 
 namespace tensor.simulation.config;
 
 enum simulation_type : short {
   link_network_simulation = 0,
+}
+
+table layer_description {
+  path:string;
+  nodes:[ulong];
 }
 
 table parameters {
@@ -22,8 +27,15 @@ table simulation {
   sim_params:parameters;
 
   events:[event];
-  layers:[layer];
+  layers:[layer_description];
+
+  
+  control_binding_point:binding_point;
+
+  shim_endpoint:binding_point;
+  comm_endpoint:binding_point;
 }
 
 root_type simulation;
-file_identifier "TSIM";
+file_identifier "tsim";
+file_extension "tsim";

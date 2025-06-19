@@ -1,0 +1,18 @@
+namespace tensor.simulation;
+
+table ip_int {
+  ip:uint;
+}
+
+struct ip_bytes {
+  bytes:[ubyte:4];
+}
+
+union address { ip_int , ip_bytes }
+
+table binding_point {
+  port:short;
+  ip:address;
+}
+
+root_type binding_point;

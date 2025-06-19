@@ -240,40 +240,30 @@ inline const tensor::network::config::network *GetSizePrefixednetwork(const void
   return ::flatbuffers::GetSizePrefixedRoot<tensor::network::config::network>(buf);
 }
 
-inline const char *networkIdentifier() {
-  return "TNET";
-}
-
-inline bool networkBufferHasIdentifier(const void *buf) {
-  return ::flatbuffers::BufferHasIdentifier(
-      buf, networkIdentifier());
-}
-
-inline bool SizePrefixednetworkBufferHasIdentifier(const void *buf) {
-  return ::flatbuffers::BufferHasIdentifier(
-      buf, networkIdentifier(), true);
-}
-
 inline bool VerifynetworkBuffer(
     ::flatbuffers::Verifier &verifier) {
-  return verifier.VerifyBuffer<tensor::network::config::network>(networkIdentifier());
+  return verifier.VerifyBuffer<tensor::network::config::network>(nullptr);
 }
 
 inline bool VerifySizePrefixednetworkBuffer(
     ::flatbuffers::Verifier &verifier) {
-  return verifier.VerifySizePrefixedBuffer<tensor::network::config::network>(networkIdentifier());
+  return verifier.VerifySizePrefixedBuffer<tensor::network::config::network>(nullptr);
+}
+
+inline const char *networkExtension() {
+  return "tnet";
 }
 
 inline void FinishnetworkBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<tensor::network::config::network> root) {
-  fbb.Finish(root, networkIdentifier());
+  fbb.Finish(root);
 }
 
 inline void FinishSizePrefixednetworkBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
     ::flatbuffers::Offset<tensor::network::config::network> root) {
-  fbb.FinishSizePrefixed(root, networkIdentifier());
+  fbb.FinishSizePrefixed(root);
 }
 
 }  // namespace config

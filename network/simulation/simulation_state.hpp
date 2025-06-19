@@ -33,10 +33,10 @@ namespace tensor {
       SIMULATION_STOPPED,
     };
 
-    class simulation_state : simulation_system {
+    class simulation_state {  // }: simulation_system {
      public:
       simulation_state(owning_ptr<simulation_event_handler>& event_handler, std::mutex& event_mtx, owning_ptr<asio::io_context>& io_context, const simulation_config& config)
-          : sim_control(make_owning_ptr<simulation_control>(io_context)), event_mtx(event_mtx), event_handler(event_handler), config(config) {}
+          : io_context(io_context), sim_control(make_owning_ptr<simulation_control>(this, io_context)), event_mtx(event_mtx), event_handler(event_handler), config(config) {}
       ~simulation_state() = default;
 
       const simulation_config& get_config() const { return config; }
@@ -45,15 +45,18 @@ namespace tensor {
       }
       bool simulation_in_state(simulation_state_type state) const;
 
-      void bind_layer(simulation_layer* layer);
-
       void launch();
       void stop();
       void cleanup();
 
+      asio::io_context& get_io_context() { return *io_context; }
+
       void handle_event(const simulation_event& event);
 
       void handle_message(const message& msg);
+
+      binding_point get_layer_endpoint(simulation_layer_type type) const;
+      binding_point get_control_endpoint() const;
 
      private:
       std::mutex state_mutex;
@@ -75,17 +78,19 @@ namespace tensor {
         owning_ptr<message_channel> rx_channel;
         std::stop_token stoken;
       };
-
       static thread_local threadlocal_data* thread_data;
-
       std::jthread simulation_thread;
 
-      owning_ptr<simulation_control> sim_control;
-      std::map<uint64_t, lib_ptr> layer_libraries;
+      owning_ptr<asio::io_context>& io_context;
 
+      friend class simulation_control;
+      std::mutex controL_mtx;
+      owning_ptr<simulation_control> sim_control;
+
+      std::map<uint64_t, lib_ptr> layer_libraries;
       struct sim_layer {
         simulation_layer* layer = nullptr;
-        simulation_layer_type type = SIM_EVENT_LAYER;
+        simulation_layer_type type = SIM_ANALYSIS_LAYER;
         symbol delete_fn;
       };
       std::map<uint64_t, sim_layer> layer_map;
@@ -96,7 +101,6 @@ namespace tensor {
       simulation_config config;
 
       std::vector<simulation_node> nodes;
-      std::vector<simulation_event> events;
       std::vector<simulation_layer*> layers;
 
       owning_ptr<message_channel> tx_channel;
@@ -115,7 +119,8 @@ namespace tensor {
       //// simulation thread functions only
       void wait_for_initialization();
       void handle_init_msg(const message& msg);
-      void bind_layer(const std::filesystem::path& path, simulation_layer_type type);
+
+      void bind_layer(const std::filesystem::path& path);
 
       void wait_for_start();
       void handle_start_msg(const message& msg);

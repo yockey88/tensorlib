@@ -41,15 +41,6 @@ namespace tensor {
     template <typename Fn, typename... Args>
     event_invocable(Fn fn, Args... args) -> event_invocable<Fn, Args...>;
 
-    struct event_key {
-      natural_t id;
-      std::chrono::milliseconds interval;
-
-      constexpr auto operator<=>(const event_key& other) const {
-        return id <=> other.id;
-      }
-    };
-
   }  // namespace network
 }  // namespace tensor
 
