@@ -4,9 +4,10 @@
 #ifndef TENSORLIB_CORE_ARENA_ALLOCATOR_HPP
 #define TENSORLIB_CORE_ARENA_ALLOCATOR_HPP
 
+#include "detail/tensorlib_state.hpp"
+
 #include "core/allocator.hpp"
 #include "core/arena.hpp"
-#include "detail/tensorlib_state.hpp"
 
 namespace tensor {
   namespace memory {
@@ -21,8 +22,6 @@ namespace tensor {
       arena_allocator() {}
       arena_allocator(arena* arena)
           : overide_arena(arena) {}
-      arena_allocator(arena& arena)
-          : overide_arena(&arena) {}
       virtual ~arena_allocator() override = default;
 
       template <typename U>
@@ -37,12 +36,7 @@ namespace tensor {
           throw std::bad_alloc();
         }
 
-        if (sizeof...(args) > 0) {
-          new (memory) T(std::forward<Args>(args)...);
-        } else {
-          new (memory) T();
-        }
-
+        new (memory) T(std::forward<Args>(args)...);
         return std::launder(static_cast<T*>(memory));
       }
 
@@ -97,7 +91,7 @@ namespace tensor {
         if (overide_arena != nullptr) {
           return overide_arena;
         } else {
-          return &tensorlib().main_arena;
+          return tensorlib().main_arena;
         }
       }
     };

@@ -7,7 +7,7 @@
 
 #include <flatbuffers/flexbuffers.h>
 
-#include "core/serialization.hpp"
+#include "core/defines.hpp"
 
 #include "message/channel.hpp"
 #include "message/message.hpp"
@@ -27,23 +27,8 @@ namespace tensor {
     void simulation_state::launch() {
       current_state = SIMULATION_WAITING;
 
-      simulation_thread = std::jthread([&](std::stop_token stoken) {
-        cref<channel_queue<message>> tx_queue = make_cref<channel_queue<message>>();
-        cref<channel_queue<message>> rx_queue = make_cref<channel_queue<message>>();
+      simulation_thread = std::jthread(BINDFN(&simulation_state::run_simulation_thread));
 
-        auto [this_tx_channel, sim_thread_rx_channel] = channel<message>::make_channel(tx_queue);
-        auto [sim_thread_tx_channel, this_rx_channel] = channel<message>::make_channel(rx_queue);
-
-        {
-          std::lock_guard lock(state_mutex);
-          this->tx_channel = std::move(this_tx_channel);
-          this->rx_channel = std::move(this_rx_channel);
-        }
-
-        simulation_main(std::move(sim_thread_tx_channel), std::move(sim_thread_rx_channel), stoken);
-        set_current_state(SIMULATION_STOPPED);
-        std::println("");
-      });
       while (simulation_in_state(SIMULATION_WAITING)) {
         std::this_thread::yield();
       }
@@ -123,6 +108,9 @@ namespace tensor {
     void simulation_state::handle_message(const message& msg) {
       switch (msg.get_category()) {
         case NOTIFICATION:
+          if (msg.get_id() == SIM_NETWORK_LAUNCH) {
+            sim_control->network_launch();
+          }
           break;
 
         case CONTROL:
@@ -215,6 +203,24 @@ namespace tensor {
       current_state = state;
     }
 
+    void simulation_state::run_simulation_thread(std::stop_token stoken) {
+      cref<channel_queue<message>> tx_queue = make_cref<channel_queue<message>>();
+      cref<channel_queue<message>> rx_queue = make_cref<channel_queue<message>>();
+
+      auto [this_tx_channel, sim_thread_rx_channel] = channel<message>::make_channel(tx_queue);
+      auto [sim_thread_tx_channel, this_rx_channel] = channel<message>::make_channel(rx_queue);
+
+      {
+        std::lock_guard lock(state_mutex);
+        this->tx_channel = std::move(this_tx_channel);
+        this->rx_channel = std::move(this_rx_channel);
+      }
+
+      simulation_main(std::move(sim_thread_tx_channel), std::move(sim_thread_rx_channel), stoken);
+      set_current_state(SIMULATION_STOPPED);
+      std::println("");
+    }
+
     void simulation_state::simulation_main(owning_ptr<message_channel>&& thread_tx_channel, owning_ptr<message_channel>&& thread_rx_channel, std::stop_token stoken) {
       set_current_state(SIMULATION_LAUNCHING);
 
@@ -261,25 +267,11 @@ namespace tensor {
         }
       } while (checkpoints.running && !stoken.stop_requested() && !checkpoints.error_occurred);
 
-      {
-        std::lock_guard lock(event_mtx);
-        event_handler->stop_all();
-      }
-
-      {
-        std::lock_guard lock(controL_mtx);
-        sim_control->shutdown_nodes();
-      }
-
-      while (!sim_control->nodes_cleaned_up()) {
-        sim_control->poll();
-        std::this_thread::yield();
-      }
-
-      set_current_state(SIMULATION_SHUTTING_DOWN);
+      do_shutdown_procedure();
       if (checkpoints.error_occurred) {
         /// do something with errors, report them, attempt recovery?, etc...
       }
+
       wait_for_shutdown();
     }
 
@@ -310,7 +302,26 @@ namespace tensor {
           continue;
         }
 
-        handle_init_msg(*msg);
+        if (msg->get_id() == THREAD_INITIALIZE) {
+          checkpoints.initialized = true;
+
+          /// launch necessary nodes
+          sim_control->launch_nodes(config);
+          std::println("simulation control launched\n");
+
+          /// initialize all layers
+          {
+            std::lock_guard lock(state_mutex);
+            /// load layers from config
+            for (auto& layer : config.layers) {
+              bind_layer(layer.path);
+            }
+          }
+        } else {
+          std::print("Invalid message type for thread initialization : {}:{}\n", msg->get_category(), msg->get_id());
+          exit_code = -1;
+          checkpoints.error_occurred = true;
+        }
       } while (!checkpoints.initialized && !checkpoints.error_occurred && !thread_data->stoken.stop_requested());
 
       message ackmsg;
@@ -324,27 +335,22 @@ namespace tensor {
       thread_data->tx_channel->push(std::move(ackmsg));
     }
 
-    void simulation_state::handle_init_msg(const message& msg) {
-      if (msg.get_id() == THREAD_INITIALIZE) {
-        checkpoints.initialized = true;
-
-        /// launch necessary nodes
-        sim_control->launch_nodes(config);
-        std::println("simulation control launched\n");
-
-        /// initialize all layers
-        {
-          std::lock_guard lock(state_mutex);
-          /// load layers from config
-          for (auto& layer : config.layers) {
-            bind_layer(layer.path);
-          }
+    void simulation_state::wait_for_start() {
+      TENSORLIB_ASSERT(thread_data != nullptr, "Thread data is null");
+      do {
+        opt<message> msg = thread_data->rx_channel->await_message(std::chrono::milliseconds(200));
+        if (!msg) {
+          continue;
         }
-      } else {
-        std::print("Invalid message type for thread initialization : {}:{}\n", msg.get_category(), msg.get_id());
-        exit_code = -1;
-        checkpoints.error_occurred = true;
-      }
+
+        if (msg->get_id() == THREAD_START) {
+          checkpoints.running = true;
+        } else {
+          std::print("Invalid message type for thread start : {}:{}\n", msg->get_category(), msg->get_id());
+          checkpoints.error_occurred = true;
+          exit_code = -1;
+        }
+      } while (!checkpoints.running && !checkpoints.error_occurred && !thread_data->stoken.stop_requested());
     }
 
     void simulation_state::bind_layer(const std::filesystem::path& path) {
@@ -426,25 +432,23 @@ namespace tensor {
       }
     }
 
-    void simulation_state::wait_for_start() {
-      TENSORLIB_ASSERT(thread_data != nullptr, "Thread data is null");
-      do {
-        opt<message> msg = thread_data->rx_channel->await_message(std::chrono::milliseconds(200));
-        if (!msg) {
-          continue;
-        }
-        handle_start_msg(*msg);
-      } while (!checkpoints.running && !checkpoints.error_occurred && !thread_data->stoken.stop_requested());
-    }
-
-    void simulation_state::handle_start_msg(const message& msg) {
-      if (msg.get_id() == THREAD_START) {
-        checkpoints.running = true;
-      } else {
-        std::print("Invalid message type for thread start : {}:{}\n", msg.get_category(), msg.get_id());
-        checkpoints.error_occurred = true;
-        exit_code = -1;
+    void simulation_state::do_shutdown_procedure() {
+      {
+        std::lock_guard lock(event_mtx);
+        event_handler->stop_all();
       }
+
+      {
+        std::lock_guard lock(controL_mtx);
+        sim_control->shutdown_nodes();
+      }
+
+      while (!sim_control->nodes_cleaned_up()) {
+        sim_control->poll();
+        std::this_thread::yield();
+      }
+
+      set_current_state(SIMULATION_SHUTTING_DOWN);
     }
 
     void simulation_state::wait_for_shutdown() {
@@ -518,6 +522,7 @@ namespace tensor {
           do_main_timestep();
           break;
 
+        /// \note since nodes should be fully independent we can simply call activate with a single node id for the sinc
         case NODE_EVENT_ACTIVATE:
           sim_control->activate_nodes(event.node_ids);
           break;

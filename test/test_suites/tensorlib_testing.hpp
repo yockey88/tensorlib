@@ -13,9 +13,9 @@
 namespace tensor {
   namespace testing {
 
-    class TensorLibEnvironment : public ::testing::Environment {
+    class tensorlib_test_environment : public ::testing::Environment {
      public:
-      TensorLibEnvironment() = default;
+      tensorlib_test_environment() = default;
 
       void SetUp() override;
       void TearDown() override;
@@ -28,7 +28,7 @@ namespace tensor {
 
     void register_test_environment();
 
-    TensorLibEnvironment* get_test_environment();
+    tensorlib_test_environment* get_test_environment();
 
   }  // namespace testing
 }  // namespace tensor

@@ -4,13 +4,15 @@
 #include <gtest/gtest.h>
 
 #include "linalgebra/dyn_matrix.hpp"
+
 #include "tensorlib.hpp"
 
-class MatrixTests : public ::testing::Test {
+
+class matrix_tests : public ::testing::Test {
  protected:
 };
 
-TEST_F(MatrixTests, MatrixCreation) {
+TEST_F(matrix_tests, MatrixCreation) {
   constexpr tensor::matrix<3, 3> m1{
     {
       std::array{ 1.f, 2.f, 3.f },
@@ -47,7 +49,7 @@ TEST_F(MatrixTests, MatrixCreation) {
   EXPECT_EQ(m2(1, 2), 6.f);
 }
 
-TEST_F(MatrixTests, MatrixEquality) {
+TEST_F(matrix_tests, MatrixEquality) {
   constexpr tensor::matrix<3, 3> m1{
     {
       std::array{ 1.f, 2.f, 3.f },
@@ -74,7 +76,7 @@ TEST_F(MatrixTests, MatrixEquality) {
   EXPECT_NE(m1, m3);
 }
 
-TEST_F(MatrixTests, MatrixSize) {
+TEST_F(matrix_tests, MatrixSize) {
   constexpr tensor::matrix<3, 3> m1{
     {
       std::array{ 1.f, 2.f, 3.f },
@@ -103,7 +105,7 @@ TEST_F(MatrixTests, MatrixSize) {
   ASSERT_EQ(m2(1, 3), 8.f);
 }
 
-TEST_F(MatrixTests, MatrixSum) {
+TEST_F(matrix_tests, MatrixSum) {
   constexpr tensor::matrix<3, 3> m1{
     {
       std::array{ 1.f, 2.f, 3.f },
@@ -124,7 +126,7 @@ TEST_F(MatrixTests, MatrixSum) {
   EXPECT_EQ(sum(0, 1), 4.f);
 }
 
-TEST_F(MatrixTests, MatrixDifference) {
+TEST_F(matrix_tests, MatrixDifference) {
   constexpr tensor::matrix<3, 3> m1{
     {
       std::array{ 1.f, 2.f, 3.f },
@@ -145,7 +147,7 @@ TEST_F(MatrixTests, MatrixDifference) {
   EXPECT_EQ(diff, zero_mat);
 }
 
-TEST_F(MatrixTests, MatrixProduct) {
+TEST_F(matrix_tests, MatrixProduct) {
   constexpr tensor::matrix<3, 3> m1{
     {
       std::array{ 1.f, 2.f, 3.f },
@@ -165,7 +167,7 @@ TEST_F(MatrixTests, MatrixProduct) {
   EXPECT_EQ(product(0, 0), 30.f);
 }
 
-// TEST_F(MatrixTests, DynamicMatrixCreation) {
+// TEST_F(matrix_tests, DynamicMatrixCreation) {
 //   constexpr tensor::matrix<3, 3> m1{
 //     {
 //       std::array{ 1.f, 2.f, 3.f },
@@ -204,7 +206,7 @@ TEST_F(MatrixTests, MatrixProduct) {
 //   EXPECT_EQ((*dm2)(1, 2), 6.f);
 // }
 
-TEST_F(MatrixTests, DynamicMatrixEquality) {
+TEST_F(matrix_tests, DynamicMatrixEquality) {
   constexpr tensor::matrix<3, 3> m1{
     {
       std::array{ 1.f, 2.f, 3.f },
@@ -238,14 +240,14 @@ TEST_F(MatrixTests, DynamicMatrixEquality) {
   // EXPECT_NE(*dm1, *dm3);
 }
 
-TEST_F(MatrixTests, DynamicMatrixSize) {
-  constexpr tensor::matrix<3, 3> m1{
-    {
-      std::array{ 1.f, 2.f, 3.f },
-      std::array{ 4.f, 5.f, 6.f },
-      std::array{ 7.f, 8.f, 9.f },
-    }
-  };
+TEST_F(matrix_tests, DynamicMatrixSize) {
+  // constexpr tensor::matrix<3, 3> m1{
+  //   {
+  //     std::array{ 1.f, 2.f, 3.f },
+  //     std::array{ 4.f, 5.f, 6.f },
+  //     std::array{ 7.f, 8.f, 9.f },
+  //   }
+  // };
   // tensor::matrix_nxm dm1 = tensor::make_matrix(m1);
   // EXPECT_EQ(dm1->rows, 3);
   // EXPECT_EQ(dm1->cols, 3);
@@ -270,7 +272,7 @@ TEST_F(MatrixTests, DynamicMatrixSize) {
   // ASSERT_EQ((*dm2)(1, 3), 8.f);
 }
 
-TEST_F(MatrixTests, DynamicMatrixSum) {
+TEST_F(matrix_tests, DynamicMatrixSum) {
   constexpr tensor::matrix<3, 3> m1{
     {
       std::array{ 1.f, 2.f, 3.f },
@@ -293,7 +295,7 @@ TEST_F(MatrixTests, DynamicMatrixSum) {
   EXPECT_EQ(dsum(0, 1), 4.f);
 }
 
-// TEST_F(MatrixTests, DynamicMatrixDifference) {
+// TEST_F(matrix_tests, DynamicMatrixDifference) {
 //   constexpr tensor::matrix<3, 3> m1{
 //     {
 //       std::array{ 1.f, 2.f, 3.f },
@@ -316,7 +318,7 @@ TEST_F(MatrixTests, DynamicMatrixSum) {
 //   // EXPECT_EQ((*ddiff), (*zero_mat));
 // }
 
-// TEST_F(MatrixTests, DynamicMatrixProduct) {
+// TEST_F(matrix_tests, DynamicMatrixProduct) {
 //   constexpr tensor::matrix<3, 3> m1{
 //     {
 //       std::array{ 1.f, 2.f, 3.f },

@@ -8,11 +8,13 @@
 #include <string>
 #include <vector>
 
+#include "core/owning_ptr.hpp"
 #include "core/types.hpp"
+
+#include "graph/graph.hpp"
 
 #include "fb_specs/binding_point_generated.h"
 #include "fb_specs/simulation_config_generated.h"
-#include "graph/graph.hpp"
 #include "simulation/simulation_layer.hpp"
 
 namespace tnet_sim_cfg = tensor::simulation::config;

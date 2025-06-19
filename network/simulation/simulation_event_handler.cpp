@@ -44,16 +44,17 @@ namespace tensor {
         }
         /// repeating event starting at a certain time and lasting the rest of the sim
         else if (key.time.min_step == key.time.max_step && key.time.max_step > 0) {
-          /// calculate queue of wait times for timer
+          /// \todo calculate queue of wait times for timer
         }
         /// if not equal then we have a duration with the interval looping between start and end
         else if (key.time.min_step != key.time.max_step) {
-          /// calculate queue of wait times for timer
+          /// \todo calculate queue of wait times for timer
         } else {
           std::print(std::cerr, "Invalid event key: {}:{}\n", key.id, key.interval);
           return -1;
         }
-        /// create interval timer
+
+        /// \todo create interval timer
       }
       TENSORLIB_ASSERT(timer != nullptr, "Timer is null");
 

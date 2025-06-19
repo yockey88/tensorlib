@@ -59,18 +59,7 @@ namespace tensor {
   using opt = std::optional<T>;
 
   template <typename T>
-  using owning_ptr = std::unique_ptr<T>;
-
-  template <typename T>
   using cref = std::shared_ptr<T>;
-
-  template <typename T, typename... Args>
-    requires requires() {
-      { std::make_unique<T>(std::declval<Args>()...) } -> std::same_as<owning_ptr<T>>;
-    }
-  owning_ptr<T> make_owning_ptr(Args&&... args) {
-    return std::make_unique<T>(std::forward<Args>(args)...);
-  }
 
   template <typename T, typename... Args>
     requires requires() {

@@ -156,9 +156,10 @@ namespace tensor {
 
     template <typename... Args>
       requires std::is_base_of_v<ref_counted, T> &&
-      requires(Args&&... args) { new T(std::forward<Args>(args)...); }
+      requires(Args&&... args) { memory::arena_allocator<T>{}.allocate(std::forward<Args>(args)...); }
     static ref<T> create(Args&&... args) {
-      return ref<T>(new T(std::forward<Args>(args)...));
+      static memory::arena_allocator<T> allocator{};
+      return ref<T>(allocator.allocate(std::forward<Args>(args)...));
     }
 
     bool operator==(const ref<T>& other) const {

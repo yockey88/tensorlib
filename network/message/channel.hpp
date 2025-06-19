@@ -8,6 +8,7 @@
 #include <mutex>
 #include <queue>
 
+#include "core/owning_ptr.hpp"
 #include "core/types.hpp"
 
 namespace tensor {

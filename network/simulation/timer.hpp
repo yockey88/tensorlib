@@ -9,6 +9,8 @@
 
 #include <asio/asio.hpp>
 
+#include "core/owning_ptr.hpp"
+
 #include "simulation/event_callback.hpp"
 
 namespace tensor {

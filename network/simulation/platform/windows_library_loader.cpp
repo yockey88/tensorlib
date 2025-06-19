@@ -5,6 +5,8 @@
 
 #include <windows.h>
 
+#include "core/owning_ptr.hpp"
+
 #include "simulation/library_loader.hpp"
 #include "simulation/platform/windows_dyn_library.hpp"
 
@@ -12,7 +14,7 @@ namespace tensor {
   namespace network {
 
     lib_ptr library_loader::load_library(const std::filesystem::path& path) {
-      return std::make_unique<windows_dyn_library>(path);
+      return make_owning_ptr<windows_dyn_library>(path);
     }
 
     void library_loader::initialize_platform() {

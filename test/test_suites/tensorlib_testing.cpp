@@ -3,30 +3,31 @@
  **/
 #include "tensorlib_testing.hpp"
 
-#include "core/arena.hpp"
 #include "detail/tensorlib_state.hpp"
+
+#include "core/arena.hpp"
 
 namespace tensor {
   namespace testing {
 
-    void TensorLibEnvironment::SetUp() {
-      tensor::memory::allocate_arena(&memory_arena);
-      tensor::tensorlib().main_arena = memory_arena;
+    void tensorlib_test_environment::SetUp() {
+      tensorlib().main_arena = subsystem<memory::arena>::get();
+      memory::allocate_arena(tensorlib().main_arena);
     }
 
-    void TensorLibEnvironment::TearDown() {
-      tensor::memory::deallocate_arena(&memory_arena);
+    void tensorlib_test_environment::TearDown() {
+      memory::deallocate_arena(tensorlib().main_arena);
     }
 
-    tensor::memory::arena* TensorLibEnvironment::get_memory_arena() {
-      return &memory_arena;
+    memory::arena* tensorlib_test_environment::get_memory_arena() {
+      return tensorlib().main_arena;
     }
 
     namespace detail {
       namespace {
 
         struct test_metadata {
-          TensorLibEnvironment* test_environment = nullptr;
+          tensorlib_test_environment* test_environment = nullptr;
         };
 
         static test_metadata& get_test_metadata() {
@@ -38,13 +39,11 @@ namespace tensor {
     }  // namespace detail
 
     void register_test_environment() {
-      TensorLibEnvironment* env = new TensorLibEnvironment();
-      ::testing::AddGlobalTestEnvironment(env);
-
-      detail::get_test_metadata().test_environment = env;
+      detail::get_test_metadata().test_environment = new tensorlib_test_environment();
+      ::testing::AddGlobalTestEnvironment(detail::get_test_metadata().test_environment);
     }
 
-    TensorLibEnvironment* get_test_environment() {
+    tensorlib_test_environment* get_test_environment() {
       return detail::get_test_metadata().test_environment;
     }
 

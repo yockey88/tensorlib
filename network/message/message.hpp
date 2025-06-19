@@ -38,6 +38,7 @@ namespace tensor {
     };
 
     enum message_id : uint8_t {
+
       NACK = 0x00,
       ACK = 0x01,
 
@@ -45,11 +46,12 @@ namespace tensor {
       PONG = 0x03,
 
       SIM_DESCRIPTION,
-
       SIM_EVENT,
 
       NODE_INITIALIZATION_REQUEST,
       NODE_SHUTDOWN_REQUEST,
+
+      SIM_NETWORK_LAUNCH,
 
       /// thread messages
       THREAD_INITIALIZE,
@@ -142,7 +144,7 @@ namespace tensor {
 
       template <typename T>
         requires self_parsing_message<T>
-      T parse_message(const std::vector<uint8_t>& data) const {
+      static T parse_message(const std::vector<uint8_t>& data) {
         return T::parse(data);
       }
     };

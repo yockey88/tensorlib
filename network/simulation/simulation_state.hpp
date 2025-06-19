@@ -112,18 +112,19 @@ namespace tensor {
       //// mixed used functions that must use mutex
       void set_current_state(simulation_state_type state, bool override = false);
 
+      void run_simulation_thread(std::stop_token stoken);
+
       opt<integer_t> exit_code = std::nullopt;
       void simulation_main(owning_ptr<message_channel>&& thread_tx_channel, owning_ptr<message_channel>&& thread_rx_channel, std::stop_token stoken);
       void do_main_timestep();
 
       //// simulation thread functions only
       void wait_for_initialization();
-      void handle_init_msg(const message& msg);
+      void wait_for_start();
 
       void bind_layer(const std::filesystem::path& path);
 
-      void wait_for_start();
-      void handle_start_msg(const message& msg);
+      void do_shutdown_procedure();
 
       void wait_for_shutdown();
       void handle_shutdown_msg(const message& msg);

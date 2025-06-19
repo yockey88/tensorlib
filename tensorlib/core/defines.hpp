@@ -14,7 +14,7 @@
     #define TENSORLIB_API extern "C" __declspec(dllexport)
     #define TENSORLIB_CLASS __declspec(dllexport)
   #else
-    #define TENSORLIB_API
+    #define TENSORLIB_API extern "C" __declspec(dllimport)
     #define TENSORLIB_CLASS __declspec(dllimport)
   #endif
 #endif  // TENSORLIB_WINDOWS
@@ -52,6 +52,8 @@
   #define TENSORLIB_ASSERT(expr, msg) assert(expr && msg)
   // clang-format on
 #endif
+
+#define BINDFN(fn) std::bind_front(fn, this)
 
 static constexpr uint64_t kFnvOffsetBasis = 0xBCF29CE484222325;
 static constexpr uint64_t kFnvPrime = 0x100000001B3;

@@ -28,9 +28,8 @@ namespace tensor {
         static void allocate_page(arena* arena_ptr, size_t page_index) {
           TENSORLIB_ASSERT(arena_ptr != nullptr, "Arena pointer cannot be null.");
           TENSORLIB_ASSERT(page_index < arena::kMaxPages, "Page index out of bounds.");
-
-          arena_ptr->pages[page_index] = (uint8_t*)malloc(arena::kPageSize);
-          report_allocation(arena_ptr, arena_ptr->pages[page_index], arena::kPageSize);
+          arena_ptr->pages[page_index] = (arena::page*)malloc(sizeof(arena::page));
+          report_allocation(arena_ptr, arena_ptr->pages[page_index]->memory(), arena::kPageSize);
         }
 
         static void allocate_next_page(arena* arena_ptr) {
@@ -40,7 +39,6 @@ namespace tensor {
           TENSORLIB_ASSERT(arena_ptr->page_allocation_cursor < arena::kMaxPages, "Page index out of bounds.");
 
           allocate_page(arena_ptr, arena_ptr->page_allocation_cursor);
-          TENSORLIB_ASSERT(arena_ptr->pages[arena_ptr->page_allocation_cursor] != nullptr, "Memory allocation failed.");
 
           arena_ptr->num_pages++;
           arena_ptr->page_cursor = 0;
@@ -60,8 +58,27 @@ namespace tensor {
       }  // namespace
     }  // namespace detail
 
+    arena::page::page() {
+      std::ranges::fill(data, 0);
+    }
+
+    void* arena::page::memory(size_t offset) {
+      TENSORLIB_ASSERT(offset < kPageSize, "Offset out of bounds for page memory.");
+      return static_cast<void*>(data + offset);
+    }
+
     natural_t arena::living_memory() const {
       return bytes_allocated - bytes_freed;
+    }
+
+    arena::page* arena::get_page(size_t index) {
+      TENSORLIB_ASSERT(index < kMaxPages, "Page index out of bounds.");
+      return pages[index];
+    }
+
+    void* arena::get_page_start(size_t index) {
+      TENSORLIB_ASSERT(index < kMaxPages, "Page index out of bounds.");
+      return pages[index]->memory();
     }
 
     void allocate_arena(arena* arena_ptr) {
@@ -114,7 +131,7 @@ namespace tensor {
         TENSORLIB_ASSERT(arena_ptr->page_cursor == 0, "Allocation size is too large for Arena.");
       }
 
-      void* mem = arena_ptr->pages[arena_ptr->page_allocation_cursor] + arena_ptr->page_cursor;
+      void* mem = arena_ptr->pages[arena_ptr->page_allocation_cursor]->memory(arena_ptr->page_cursor);
       TENSORLIB_ASSERT(mem != nullptr, "Memory allocation failed.");
 
       arena_ptr->page_cursor += size;

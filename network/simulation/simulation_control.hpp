@@ -32,6 +32,8 @@ namespace tensor {
       void launch_nodes(const simulation_config& config);
       void activate_nodes(const std::vector<natural_t>& node_ids);
 
+      void network_launch();
+
       void poll();
 
       void shutdown_nodes();

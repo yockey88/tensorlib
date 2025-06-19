@@ -7,6 +7,7 @@
 #include <asio/asio.hpp>
 
 #include "core/defines.hpp"
+#include "core/owning_ptr.hpp"
 #include "core/types.hpp"
 
 #include "asio/steady_timer.hpp"

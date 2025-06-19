@@ -9,12 +9,14 @@
 #include <map>
 #include <print>
 
+#include "core/owning_ptr.hpp"
+
 #include "simulation/dyn_library.hpp"
 
 namespace tensor {
   namespace network {
 
-    using lib_ptr = std::unique_ptr<dyn_library>;
+    using lib_ptr = owning_ptr<dyn_library>;
 
     class library_loader {
      public:

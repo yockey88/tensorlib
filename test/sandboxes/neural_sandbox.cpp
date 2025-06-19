@@ -1,12 +1,6 @@
 /**
  * \file sandboxes/neural.cpp
  **/
-#ifndef TENSORLIB_SANDBOXES_NEURAL_CPP
-#define TENSORLIB_SANDBOXES_NEURAL_CPP
-
-#include <chrono>
-#include <iostream>
-
 #include "tensorlib.hpp"
 
 // constexpr tensor::matrix<4, 2> or_inputs = {
@@ -93,5 +87,3 @@ int main() {
 
   return 0;
 }
-
-#endif  // TENSORLIB_SANDBOXES_NEURAL_CPP

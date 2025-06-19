@@ -72,7 +72,7 @@ namespace tensor {
       }
       /// register ctrl+c and ctrl+z handlers
       signals = make_owning_ptr<asio::signal_set>(*io_context, SIGINT, SIGTERM);
-      signals->async_wait(std::bind_front(&simulation::signal_handler, this));
+      signals->async_wait(BINDFN(&simulation::signal_handler));
 
       library_loader::initialize_platform();
 
@@ -80,9 +80,7 @@ namespace tensor {
       bind_control_events();
 
       /// launch io-main to handle io-context running
-      io_thread = std::jthread([&](std::stop_token stoken) {
-        detail::io_main(*io_context, stoken);
-      });
+      io_thread = std::jthread([&](std::stop_token stoken) { detail::io_main(*io_context, stoken); });
 
       //// after launch the simulation controller will be running its main controller loop
       sim_state->launch();

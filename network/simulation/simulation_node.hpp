@@ -30,7 +30,7 @@ namespace tensor {
 
       uint16_t session_info = 0;
       binding_point control_binding_point;
-      owning_ptr<asio::ip::tcp::socket> control_socket;
+      owning_ptr<asio::ip::tcp::socket> control_socket = nullptr;
 
       read_write_buffer control_buffer;
       read_write_buffer sim_buffer;

@@ -5,11 +5,11 @@
 
 #include "tensorlib.hpp"
 
-class VectorTests : public ::testing::Test {
+class vector_tests : public ::testing::Test {
  protected:
 };
 
-TEST_F(VectorTests, VectorCreation) {
+TEST_F(vector_tests, VectorCreation) {
   constexpr tensor::vector<3> p1{ 1.f, 2.f, 3.f };
   constexpr tensor::vector<3> p2{ 4.f, 5.f, 6.f };
 
@@ -21,7 +21,7 @@ TEST_F(VectorTests, VectorCreation) {
   EXPECT_EQ(p2[2], 6.f);
 }
 
-TEST_F(VectorTests, VectorEquality) {
+TEST_F(vector_tests, VectorEquality) {
   constexpr tensor::vector<3> p1{ 1.f, 2.f, 3.f };
   constexpr tensor::vector<3> p2{ 1.f, 2.f, 3.f };
   constexpr tensor::vector<3> p3{ 1.f, 2.f, 4.f };
@@ -30,18 +30,18 @@ TEST_F(VectorTests, VectorEquality) {
   EXPECT_NE(p1, p3);
 }
 
-TEST_F(VectorTests, VectorSize) {
+TEST_F(vector_tests, VectorSize) {
   constexpr tensor::vector<3> p1{ 1.f, 2.f, 3.f };
   EXPECT_EQ(p1.size(), 3);
 }
 
-TEST_F(VectorTests, VectorMagnitude) {
+TEST_F(vector_tests, VectorMagnitude) {
   constexpr tensor::vector<4> unit_point{ 1.f, 0.f, 0.f, 0.f };
   constexpr tensor::real_t length = tensor::vector_magnitude(unit_point);
   EXPECT_EQ(length, 1.f);
 }
 
-TEST_F(VectorTests, VectorSum) {
+TEST_F(vector_tests, VectorSum) {
   constexpr tensor::vector<3> p1{ 1.f, 2.f, 3.f };
   constexpr tensor::vector<3> p2{ 4.f, 5.f, 6.f };
   constexpr tensor::vector<3> sum = tensor::vector_sum(p1, p2);
@@ -50,7 +50,7 @@ TEST_F(VectorTests, VectorSum) {
   EXPECT_EQ(sum[2], 9.f);
 }
 
-TEST_F(VectorTests, VectorDifference) {
+TEST_F(vector_tests, VectorDifference) {
   constexpr tensor::vector<3> p1{ 1.f, 2.f, 3.f };
   constexpr tensor::vector<3> p2{ 4.f, 5.f, 6.f };
   constexpr tensor::vector<3> diff = tensor::vector_difference(p1, p2);
@@ -59,7 +59,7 @@ TEST_F(VectorTests, VectorDifference) {
   EXPECT_EQ(diff[2], -3.f);
 }
 
-TEST_F(VectorTests, VectorScalarProduct) {
+TEST_F(vector_tests, VectorScalarProduct) {
   constexpr tensor::vector<3> p1{ 1.f, 1.f, 1.f };
   constexpr tensor::real_t scalar = 2.f;
   constexpr tensor::vector<3> scaled_p1 = tensor::scalar_product(scalar, p1);
@@ -68,7 +68,7 @@ TEST_F(VectorTests, VectorScalarProduct) {
   EXPECT_EQ(scaled_p1[2], 2.f);
 }
 
-TEST_F(VectorTests, VectorDotProduct) {
+TEST_F(vector_tests, VectorDotProduct) {
   constexpr tensor::vector<3> p1{ 1.f, 2.f, 3.f };
   constexpr tensor::vector<3> p2{ 4.f, 5.f, 6.f };
   constexpr tensor::real_t dot_product = tensor::dot_product(p1, p2);

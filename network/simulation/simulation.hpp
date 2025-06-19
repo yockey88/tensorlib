@@ -9,6 +9,7 @@
 
 #include <asio/asio.hpp>
 
+#include "core/owning_ptr.hpp"
 #include "core/types.hpp"
 
 #include "simulation/simulation_config.hpp"

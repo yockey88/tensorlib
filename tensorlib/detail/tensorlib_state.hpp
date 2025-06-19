@@ -9,7 +9,7 @@
 namespace tensor {
 
   struct tensorlib_state {
-    memory::arena main_arena;
+    memory::arena* main_arena;
   };
 
   tensorlib_state& tensorlib();

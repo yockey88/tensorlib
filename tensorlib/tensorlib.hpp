@@ -4,16 +4,17 @@
 #ifndef TENSORLIB_HPP
 #define TENSORLIB_HPP
 
+#include "detail/constants.hpp"
+#include "detail/tensorlib_state.hpp"
+
 #include "core/arena.hpp"
 #include "core/arena_allocator.hpp"
 #include "core/buffer.hpp"
 #include "core/defines.hpp"
-#include "core/misc_functions.hpp"
 #include "core/serialization.hpp"
 #include "core/timer.hpp"
 #include "core/types.hpp"
-#include "detail/constants.hpp"
-#include "detail/tensorlib_state.hpp"
+#include "math/n_choose_k.hpp"
 
 #include "graph/graph.hpp"
 #include "linalgebra/dyn_matrix.hpp"

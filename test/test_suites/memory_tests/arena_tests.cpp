@@ -10,7 +10,7 @@
 
 namespace tmem = tensor::memory;
 
-class ArenaTests : public ::testing::Test {
+class arena_tests : public ::testing::Test {
  protected:
   tmem::arena* arena;
 
@@ -26,7 +26,7 @@ class ArenaTests : public ::testing::Test {
   }
 };
 
-TEST_F(ArenaTests, main_arena_tests) {
+TEST_F(arena_tests, main_arena_tests) {
   {
     ASSERT_EQ(arena->total_allocations, 1);  /// the first page
     ASSERT_EQ(arena->bytes_freed, 0);
@@ -71,121 +71,121 @@ TEST_F(ArenaTests, main_arena_tests) {
   }
 
   /// complex objects
-  // {
-  //   struct ComplexObject {
-  //     int a = 42;
-  //     double b = 3.14;
-  //     char c[10];
-  //   };
+  {
+    struct ComplexObject {
+      int a = 42;
+      double b = 3.14;
+      char c[10];
+    };
 
-  //   tmem::arena_allocator<ComplexObject> allocator{ arena };
-  //   ComplexObject* obj = allocator.allocate();
-  //   EXPECT_NE(obj, nullptr);
-  //   EXPECT_EQ(obj->a, 42);
-  //   EXPECT_EQ(obj->b, 3.14);
-  //   std::strcpy(obj->c, "Hello");
+    tmem::arena_allocator<ComplexObject> allocator{ arena };
+    ComplexObject* obj = allocator.allocate();
+    EXPECT_NE(obj, nullptr);
+    EXPECT_EQ(obj->a, 42);
+    EXPECT_EQ(obj->b, 3.14);
+    std::strcpy(obj->c, "Hello");
 
-  //   EXPECT_EQ(arena->total_allocations, 2);  /// first page + 1 allocation
-  //   EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int));
-  //   EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject));
-  //   EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize + sizeof(ComplexObject));
+    EXPECT_EQ(arena->total_allocations, 2);  /// first page + 1 allocation
+    EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int));
+    EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject));
+    EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize + sizeof(ComplexObject));
 
-  //   allocator.free(obj);
+    allocator.free(obj);
 
-  //   EXPECT_EQ(arena->total_allocations, 1);
-  //   EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject));
-  //   EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject));
-  //   EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize);
+    EXPECT_EQ(arena->total_allocations, 1);
+    EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject));
+    EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject));
+    EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize);
 
-  //   struct ReallyComplexObject {
-  //     int a = 42;
-  //     double b = 3.14;
-  //     char c[10] = { 0 };
-  //     std::array<int, 100> d;
+    struct ReallyComplexObject {
+      int a = 42;
+      double b = 3.14;
+      char c[10] = { 0 };
+      std::array<int, 100> d;
 
-  //     ComplexObject object;
-  //     std::vector<ComplexObject> other_objects;
+      ComplexObject object;
+      std::vector<ComplexObject> other_objects;
 
-  //     ReallyComplexObject() {
-  //       std::strcpy(c, "Hello");
-  //       for (size_t i = 0; i < 100; ++i) {
-  //         d[i] = i;
-  //       }
+      ReallyComplexObject() {
+        std::strcpy(c, "Hello");
+        for (size_t i = 0; i < 100; ++i) {
+          d[i] = i;
+        }
 
-  //       for (size_t i = 0; i < 10; ++i) {
-  //         auto& obj = other_objects.emplace_back();
-  //         obj.a = i;
-  //         obj.b = i * 1.1;
-  //       }
-  //     }
+        for (size_t i = 0; i < 10; ++i) {
+          auto& obj = other_objects.emplace_back();
+          obj.a = i;
+          obj.b = i * 1.1;
+        }
+      }
 
-  //     ReallyComplexObject(int a, double b, const char* c, const std::array<int, 100>& d, const ComplexObject& object, const std::vector<ComplexObject>& other_objects)
-  //         : a(a), b(b), d(d), object(object), other_objects(other_objects) {
-  //       std::strcpy(this->c, c);
-  //     }
-  //   };
+      ReallyComplexObject(int a, double b, const char* c, const std::array<int, 100>& d, const ComplexObject& object, const std::vector<ComplexObject>& other_objects)
+          : a(a), b(b), d(d), object(object), other_objects(other_objects) {
+        std::strcpy(this->c, c);
+      }
+    };
 
-  //   tmem::arena_allocator<ReallyComplexObject> allocator2{ arena };
-  //   ReallyComplexObject* obj2 = allocator2.allocate();
-  //   EXPECT_NE(obj2, nullptr);
-  //   obj2->a = 42;
-  //   obj2->b = 3.14;
-  //   ASSERT_STREQ(obj2->c, "Hello");
-  //   for (size_t i = 0; i < 100; ++i) {
-  //     EXPECT_EQ(obj2->d[i], i);
-  //   }
-  //   EXPECT_EQ(obj2->other_objects.size(), 10);
-  //   for (size_t i = 0; i < 10; ++i) {
-  //     EXPECT_EQ(obj2->other_objects[i].a, i);
-  //     EXPECT_EQ(obj2->other_objects[i].b, i * 1.1);
-  //   }
-  //   EXPECT_EQ(arena->total_allocations, 2);  /// first page + 1 allocation + 1 allocation for ReallyComplexObject
-  //   EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject));
-  //   EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject) + sizeof(ReallyComplexObject));
-  //   EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize + sizeof(ReallyComplexObject));
+    tmem::arena_allocator<ReallyComplexObject> allocator2{ arena };
+    ReallyComplexObject* obj2 = allocator2.allocate();
+    EXPECT_NE(obj2, nullptr);
+    obj2->a = 42;
+    obj2->b = 3.14;
+    ASSERT_STREQ(obj2->c, "Hello");
+    for (size_t i = 0; i < 100; ++i) {
+      EXPECT_EQ(obj2->d[i], i);
+    }
+    EXPECT_EQ(obj2->other_objects.size(), 10);
+    for (size_t i = 0; i < 10; ++i) {
+      EXPECT_EQ(obj2->other_objects[i].a, i);
+      EXPECT_EQ(obj2->other_objects[i].b, i * 1.1);
+    }
+    EXPECT_EQ(arena->total_allocations, 2);  /// first page + 1 allocation + 1 allocation for ReallyComplexObject
+    EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject));
+    EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject) + sizeof(ReallyComplexObject));
+    EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize + sizeof(ReallyComplexObject));
 
-  //   allocator2.free(obj2);
+    allocator2.free(obj2);
 
-  //   EXPECT_EQ(arena->total_allocations, 1);
-  //   EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject) + sizeof(ReallyComplexObject));
-  //   EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject) + sizeof(ReallyComplexObject));
-  //   EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize);
+    EXPECT_EQ(arena->total_allocations, 1);
+    EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject) + sizeof(ReallyComplexObject));
+    EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject) + sizeof(ReallyComplexObject));
+    EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize);
 
-  //   int a = 42;
-  //   double b = 3.14;
-  //   std::array<int, 100> d = { 0 };
-  //   for (size_t i = 0; i < 100; ++i) {
-  //     d[i] = i;
-  //   }
-  //   ComplexObject object = { 42, 3.14, "Hello" };
-  //   std::vector<ComplexObject> other_objects = { { 1, 2.0, "World" }, { 3, 4.0, "!" } };
+    int a = 42;
+    double b = 3.14;
+    std::array<int, 100> d = { 0 };
+    for (size_t i = 0; i < 100; ++i) {
+      d[i] = i;
+    }
+    ComplexObject object = { 42, 3.14, "Hello" };
+    std::vector<ComplexObject> other_objects = { { 1, 2.0, "World" }, { 3, 4.0, "!" } };
 
-  //   ReallyComplexObject* obj3 = allocator2.allocate(a, b, "Hello", d, object, other_objects);
-  //   EXPECT_NE(obj3, nullptr);
-  //   EXPECT_EQ(obj3->a, 42);
-  //   EXPECT_EQ(obj3->b, 3.14);
-  //   ASSERT_STREQ(obj3->c, "Hello");
-  //   for (size_t i = 0; i < 100; ++i) {
-  //     EXPECT_EQ(obj3->d[i], i);
-  //   }
-  //   EXPECT_EQ(obj3->other_objects.size(), 2);
-  //   EXPECT_EQ(obj3->other_objects[0].a, 1);
-  //   EXPECT_EQ(obj3->other_objects[0].b, 2.0);
-  //   ASSERT_STREQ(obj3->other_objects[0].c, "World");
-  //   EXPECT_EQ(obj3->other_objects[1].a, 3);
-  //   EXPECT_EQ(obj3->other_objects[1].b, 4.0);
-  //   ASSERT_STREQ(obj3->other_objects[1].c, "!");
+    ReallyComplexObject* obj3 = allocator2.allocate(a, b, "Hello", d, object, other_objects);
+    EXPECT_NE(obj3, nullptr);
+    EXPECT_EQ(obj3->a, 42);
+    EXPECT_EQ(obj3->b, 3.14);
+    ASSERT_STREQ(obj3->c, "Hello");
+    for (size_t i = 0; i < 100; ++i) {
+      EXPECT_EQ(obj3->d[i], i);
+    }
+    EXPECT_EQ(obj3->other_objects.size(), 2);
+    EXPECT_EQ(obj3->other_objects[0].a, 1);
+    EXPECT_EQ(obj3->other_objects[0].b, 2.0);
+    ASSERT_STREQ(obj3->other_objects[0].c, "World");
+    EXPECT_EQ(obj3->other_objects[1].a, 3);
+    EXPECT_EQ(obj3->other_objects[1].b, 4.0);
+    ASSERT_STREQ(obj3->other_objects[1].c, "!");
 
-  //   EXPECT_EQ(arena->total_allocations, 2);  /// first page + 1 allocation + 2 allocations for ReallyComplexObject
-  //   EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject) + sizeof(ReallyComplexObject));
-  //   EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject) + 2 * sizeof(ReallyComplexObject));
-  //   EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize + sizeof(ReallyComplexObject));
+    EXPECT_EQ(arena->total_allocations, 2);  /// first page + 1 allocation + 2 allocations for ReallyComplexObject
+    EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject) + sizeof(ReallyComplexObject));
+    EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject) + 2 * sizeof(ReallyComplexObject));
+    EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize + sizeof(ReallyComplexObject));
 
-  //   allocator2.free(obj3);
+    allocator2.free(obj3);
 
-  //   EXPECT_EQ(arena->total_allocations, 1);
-  //   EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject) + 2 * sizeof(ReallyComplexObject));
-  //   EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject) + 2 * sizeof(ReallyComplexObject));
-  //   EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize);
-  // }
+    EXPECT_EQ(arena->total_allocations, 1);
+    EXPECT_EQ(arena->bytes_freed, sizeof(int) + sizeof(int) + sizeof(ComplexObject) + 2 * sizeof(ReallyComplexObject));
+    EXPECT_EQ(arena->bytes_allocated, tmem::arena::kPageSize + sizeof(int) + sizeof(int) + sizeof(ComplexObject) + 2 * sizeof(ReallyComplexObject));
+    EXPECT_EQ(arena->living_memory(), tmem::arena::kPageSize);
+  }
 }

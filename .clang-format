@@ -54,18 +54,18 @@ BraceWrapping:
   SplitEmptyNamespace: false
 
 IncludeCategories:
-  # Headers in <> without extension.
   - Regex:           '<([A-Za-z0-9\/-_])+>'
     Priority:        1
-  # Headers in <> from specific external libraries.
   - Regex:           '<(flatbuffers|asio|gcem|gtest|magic_enum).h(pp|xx|h)>'
     Priority:        2
-  # Headers in <> with extension.
   - Regex:           '<([A-Za-z0-9\/-_])+\.h(pp|xx|h)?>'
     Priority:        3
-  # test harness headers
-  - Regex:           '"((core|detail)\/)'
+  - Regex:           '"((detail)\/)'
     Priority:        4
+  - Regex:           '"((core|math)\/)'
+    Priority:        5
+  - Regex:           '"((random|linalgebra|graph)\/)'
+    Priority:        6
 ---
 Language: CSharp
 BreakBeforeBraces: Custom

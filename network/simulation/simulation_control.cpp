@@ -22,6 +22,7 @@ namespace tensor {
       network_graph = config.network;
       for (const auto& node : network_graph.nodes) {
         nodes[node.id] = make_owning_ptr<simulation_node>(*io_context, node.id);
+        // nodes[node.id]->write_control_message();
       }
     }
 
@@ -37,6 +38,11 @@ namespace tensor {
           std::print(std::cerr, " !> Node {} not found\n", id);
         }
       }
+    }
+
+    void simulation_control::network_launch() {
+      /// not really sure yet, should somehow trigger nodes to start
+      /// may have to happen through a layer so that the specifics can be delegated to client
     }
 
     void simulation_control::poll() {

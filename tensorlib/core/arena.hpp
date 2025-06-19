@@ -4,10 +4,12 @@
 #ifndef TENSORLIB_CORE_ARENA_HPP
 #define TENSORLIB_CORE_ARENA_HPP
 
-#include <array>
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
-#include <vector>
+#include <span>
 
+#include "core/subsystem.hpp"
 #include "core/types.hpp"
 
 namespace tensor {
@@ -21,13 +23,20 @@ namespace tensor {
       size_t size = 0;
     };
 
-    struct arena {
+    struct arena : public subsystem<arena> {
       static inline constexpr size_t kPageSize = 64 * 4096u * 4096u;
       /// TODO: this feels wrong, this is correct for the GPU but seems incorrect if
       ///         aiming to be as cross platform as possible (research: confirm all GPUs read mem in 16 byte chunks)
       static inline constexpr size_t kAlignment = 16;
       static inline constexpr size_t kMaxPages = 16;
       static inline constexpr size_t kMaxMemoryAllowed = kMaxPages * kPageSize;
+
+      struct page {
+        alignas(kAlignment) uint8_t data[kPageSize];
+
+        page();
+        void* memory(size_t offset = 0);
+      };
 
       size_t num_pages = 0;
       size_t page_allocation_cursor = 0;
@@ -37,9 +46,12 @@ namespace tensor {
       size_t bytes_allocated = 0;
       size_t bytes_freed = 0;
 
-      uint8_t* pages[kMaxPages] = { nullptr };
+      page* pages[kMaxPages] = {};
 
       natural_t living_memory() const;
+
+      page* get_page(size_t index);
+      void* get_page_start(size_t index);
 
       static void* allocate(size_t size);
       static void free(void* ptr, size_t size);
@@ -53,5 +65,7 @@ namespace tensor {
 
   }  // namespace memory
 }  // namespace tensor
+
+TENSORLIB_SUBSYSTEM(tensor::memory::arena);
 
 #endif  // TENSORLIB_CORE_ARENA_HPP

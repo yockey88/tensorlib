@@ -12,10 +12,12 @@
 
 #include "simulation/simulation.hpp"
 
+using sim_ptr = tensor::owning_ptr<tensor::network::simulation>;
+
 int main() {
   std::println("Running network simulation in {}", std::filesystem::current_path().string());
 #if 1
-  tensor::opt<tensor::owning_ptr<tensor::network::simulation>> sim_res = tensor::network::simulation::load_from_file("network/simulations/test_sim1.tsim");
+  tensor::opt<sim_ptr> sim_res = tensor::network::simulation::load_from_file("network/simulations/test_sim1.tsim");
   if (!sim_res) {
     std::println(std::cerr, "Failed to load simulation from file");
     return -1;
@@ -23,7 +25,7 @@ int main() {
 
   std::println("Simulation loaded successfully");
   try {
-    tensor::owning_ptr<tensor::network::simulation> sim = std::move(*sim_res);
+    sim_ptr sim = std::move(*sim_res);
     sim->initialize();
 
     /// let simulation run in background
