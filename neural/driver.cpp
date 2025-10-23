@@ -35,7 +35,7 @@ namespace training {
 
 int main() {
   srand(time(nullptr));
-  // tensor::init_tensor();
+  tensor::init_tensor();
   {
     tensor::dyn_matrix input = training::training_inputs;
     tensor::dyn_matrix xor_outputs = training::xor_outputs;
@@ -80,7 +80,7 @@ int main() {
     }
   }
 
-  // tensor::shutdown_tensor();
+  tensor::shutdown_tensor();
   std::print("exit successful\n");
   return 0;
 }

@@ -7,6 +7,7 @@
 #include <print>
 
 #include "core/defines.hpp"
+#include "core/logger.hpp"
 
 namespace tensor {
   namespace memory {

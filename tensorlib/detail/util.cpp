@@ -7,13 +7,15 @@
 #include <iostream>
 #include <print>
 
+#include "core/logger.hpp"
+
 namespace tensor {
   namespace detail {
 
     std::vector<uint8_t> read_to_bytes(const std::string& filename) {
       std::ifstream file(filename, std::ios::binary | std::ios::in);
       if (!file.is_open()) {
-        std::print(std::cerr, "Failed to open file: {}\n", filename);
+        CORE_LOG_ERROR("Failed to open file: {}", filename);
         return {};
       }
 

@@ -22,7 +22,9 @@ namespace tensor {
         for (const auto& edge : g.edges[i]) {
           oss << "(" << edge.from << " -> " << edge.to << ", weight: " << edge.weight << ") ";
         }
-        oss << "\n";
+        if (i != g.edges.size() - 1) {
+          oss << "\n";
+        }
       }
       return oss.str();
     }

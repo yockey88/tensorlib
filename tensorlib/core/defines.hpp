@@ -46,13 +46,6 @@
   #define TENSORLIB_REAL_USE_DOUBLE 0
 #endif
 
-#ifndef TENSORLIB_ASSERT
-  #include <cassert>
-  // clang-format off
-  #define TENSORLIB_ASSERT(expr, msg) assert(expr && msg)
-  // clang-format on
-#endif
-
 #define BINDFN(fn) std::bind_front(fn, this)
 
 static constexpr uint64_t kFnvOffsetBasis = 0xBCF29CE484222325;

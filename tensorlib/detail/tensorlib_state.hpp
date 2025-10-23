@@ -4,12 +4,15 @@
 #ifndef TENSORLIB_DETAIL_TENSORLIB_STATE_HPP
 #define TENSORLIB_DETAIL_TENSORLIB_STATE_HPP
 
-#include "core/arena.hpp"
-
 namespace tensor {
 
+  namespace memory {
+    struct arena;
+  }
+  class logger;
   struct tensorlib_state {
     memory::arena* main_arena;
+    logger* main_logger;
   };
 
   tensorlib_state& tensorlib();

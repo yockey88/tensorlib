@@ -8,6 +8,7 @@
 
 #include "core/allocator.hpp"
 #include "core/arena.hpp"
+#include "core/logger.hpp"
 
 namespace tensor {
   namespace memory {

@@ -39,15 +39,14 @@ namespace tensor {
     };
 
   template <typename T>
-    requires is_subsystem<T>
   struct subsystem_deleter {
     void operator()(T* ptr) {
       if (ptr != nullptr) {
         // If T is trivially destructible, we do not need to call the destructor and we can just zero the memory for safety
         if constexpr (!std::is_trivially_destructible_v<T>) {
-          std::destroy_at(ptr);
+          std::destroy_at<T>(ptr);
         }
-        std::memset(ptr, 0, subsystem_description<T>::size);
+        std::memset((void*)ptr, 0, subsystem_description<T>::size);
       }
     }
   };
