@@ -327,20 +327,15 @@ namespace tensor {
         for (natural_t layer = model.num_hidden_layers(); layer > 0; --layer) {
           dyn_vector activation_derivative = model.activation(layer - 1).derivative_function(model.output(layer));
 
-          // Compute delta = gradient ⊙ f'(z)
-          for (natural_t r = 0; r < model.output(layer).size; ++r) {
-            gradient.output(layer)[r] *= activation_derivative[r];
-          }
+          gradient.output(layer) = dyn_vector_hadamard_product(gradient.output(layer), activation_derivative);
+          gradient.bias(layer - 1) = dyn_vector_sum(gradient.bias(layer - 1), gradient.output(layer));
 
-          // Use delta to compute gradients
           for (natural_t r = 0; r < model.output(layer).size; ++r) {
-            gradient.bias(layer - 1)[r] += gradient.output(layer)[r];
             for (size_t c = 0; c < model.activated_output(layer - 1).size; ++c) {
               gradient.weight(layer - 1)(r, c) += gradient.output(layer)[r] * model.activated_output(layer - 1)[c];
             }
           }
 
-          // Propagate delta backward: δ_{l-1} = W^T * δ_l
           if (layer > 1) {
             for (size_t c = 0; c < model.output(layer - 1).size; ++c) {
               real_t sum = 0.f;

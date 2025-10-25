@@ -58,7 +58,7 @@ int main() {
     tensor::real_t learning_rate = 0.1f;
 
     std::println("training model against xor data");
-    for (size_t i = 0; i < 50000; ++i) {
+    for (size_t i = 0; i < 100000; ++i) {
       tensor::real_t cost = tensor::neural::compute_cost(input, xor_outputs, ann);
       ff_network gradient = tensor::neural::backpropogate(ann, input, xor_outputs);
       tensor::neural::learn(ann, gradient, learning_rate);
