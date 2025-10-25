@@ -36,6 +36,18 @@ namespace tensor {
       initialize(topology, false, false);
     }
 
+    void ann::train_simple_model(ann& model, tensor::dyn_matrix& input_data, tensor::dyn_matrix& output_data, const tensor::natural_t iterations, const tensor::real_t learning_rate) {
+      /// we have to compute an initial cost as a sort of 'warmup' for the system (this needs to be fixed later)
+      ///   this is a hack because the model is 'lazy' in an extremely loose sense
+      //    (pls I know lazy doesnt apply here, but like it does even if it doesnt, you know? like it is but it isnt?
+      //     like i swear it is i promise like actually tho)
+      [[maybe_unused]] tensor::real_t initial_cost = tensor::neural::compute_cost(input_data, output_data, model);
+      for (size_t i = 0; i < iterations; ++i) {
+        ann gradient = tensor::neural::backpropogate(model, input_data, output_data);
+        tensor::neural::learn(model, gradient, learning_rate);
+      }
+    }
+
     natural_t ann::input_size() const {
       return l_i[0];
     }
@@ -287,11 +299,6 @@ namespace tensor {
       }
     }
 
-    /// \todo replace hardcoded binding activations with something more flexible using a computation graph,
-    ///         the pros of hardcoded derivatives is compile-time certainty and speed, but at the same time expanding the
-    ///         library is more difficult
-    /// \note alternative is coming up with a more clever system for managing bindings and possibly introducing and extremely simple syntax
-    ///         to read in NNs from files (similar to ollama)
     ann backpropogate(ann& model, const dyn_matrix& input_data, const dyn_matrix& output_data) {
       TENSORLIB_ASSERT(input_data.rows == output_data.rows, "Input and output data must have the same number of rows.");
       TENSORLIB_ASSERT(input_data.cols == model.input_size(), "Input data size does not match ANN input size.");
@@ -301,7 +308,7 @@ namespace tensor {
       gradient.zero();
 
       /// backpropogation works over all sets of input->output pairs
-      ///     we are computing minimizers of cost function C(N, x) = sum_1,M(|N(x) - y|^2)
+      ///     we are computing approximate minimizers of cost function C(N, x) = sum_1,M(|N(x) - y|^2) * (1/M)
       ///     where N is the neural network, x is the input data, and y is the output data
       /// so we find the gradient of the cost function (embedded in some high-dimensional space) and move against it
       ///     to find a valley in the cost landscape so that we can 'be as close as possible' to the desired output
@@ -310,8 +317,8 @@ namespace tensor {
         dyn_vector o_i = output_data.get_row(i);
         dyn_vector result = model.forward(in_i);
 
-        ///   if C(N, x) = sum_1,M(|N(x) - y|^2)
-        ///   then, for ech idx
+        ///   if C(N, x) = sum_1,M(|N(x) - y|^2) * (1/M)
+        ///   then, for each idx
         //          dC_i/d<var> = 2 * (N(x) - y) * dN_i/d<var>
         //     and for each var
         //          dN_i/d<var> = f'(N_i) * dN_i/d<var>
@@ -331,12 +338,16 @@ namespace tensor {
           gradient.output(layer) = dyn_vector_hadamard_product(gradient.output(layer), activation_derivative);
           gradient.bias(layer - 1) = dyn_vector_sum(gradient.bias(layer - 1), gradient.output(layer));
 
+          /// model.output(layer).size == gradient.output(layer).size so this is safe
           for (natural_t r = 0; r < model.output(layer).size; ++r) {
+            /// very important that we use activated_output here otherwise we will be computing the gradient using
+            ///   the non-activated layer outputs which is incorrect
             for (size_t c = 0; c < model.activated_output(layer - 1).size; ++c) {
               gradient.weight(layer - 1)(r, c) += gradient.output(layer)[r] * model.activated_output(layer - 1)[c];
             }
           }
 
+          /// if we are not at the input layer, propagate the gradient backwards
           if (layer > 1) {
             for (size_t c = 0; c < model.output(layer - 1).size; ++c) {
               real_t sum = 0.f;

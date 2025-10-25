@@ -54,29 +54,11 @@ endif()
 set(BUILD_CONFIG_MACRO "")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(BUILD_CONFIG_MACRO "TENSORLIB_DEBUG_BUILD")
-
-  if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Od")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
-  endif()
 elseif(CMAKE_BUILD_TYPE MATCHES Release)
   set(BUILD_CONFIG_MACRO "TENSORLIB_RELEASE_BUILD")
-  
-  if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O3")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O3")
-  endif()
 elseif (CMAKE_BUILD_TYPE MATCHES Profile)
   set(BUILD_CONFIG_MACRO "TENSORLIB_PROFILE_BUILD")
   add_compile_definitions("TRACY_ENABLE" "TRACY_CALLSTACK=10")
-
-  if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2")
-  endif()
 else()
   message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}. Please specify Debug, Release, or Profile.")
 endif()
@@ -122,14 +104,6 @@ macro (add_library_and_driver ${name} ${ARGN})
   target_include_directories(${name}_driver PRIVATE ${TENSORLIB_INCLUDES} ${DRIVERLIB_INCLUDES})
   target_sources(${name}_driver PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${name}.cpp)
   target_link_libraries(${name}_driver PRIVATE tensorlib network)
-
-  # # target_compile_definitions(network
-  # #   PRIVATE
-  # #     TENSORLIB_EXTERN_DIR="${TENSORLIB_EXTERN_DIR}"
-  # #     TENSORLIB_WINDOWS_BUILD=${TENSORLIB_WINDOWS_BUILD}
-  # #     TENSORLIB_LINUX_BUILD=${TENSORLIB_LINUX_BUILD}
-  # #     TENSORLIB_OSX_BUILD=${TENSORLIB_OSX_BUILD}
-  # # )
 endmacro()
 
 ### add dependencies

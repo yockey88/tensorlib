@@ -38,12 +38,5 @@ namespace tensor {
       return res;
     }
 
-    // dyn_vector activate(dyn_vector& v) {
-    //   for (natural_t i = 0; i < v.size; ++i) {
-    //     v(i) = v(i) <= 0.f ? -1.f : 1.f;
-    //   }
-    //   return v;
-    // }
-
   }  // namespace neural
 }  // namespace tensor

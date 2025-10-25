@@ -25,6 +25,8 @@ namespace tensor {
       ann(const std::span<const natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b);
       ann(const std::span<const natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b, const std::vector<layer_activation>& activation_functions);
 
+      static void train_simple_model(ann& model, tensor::dyn_matrix& input_data, tensor::dyn_matrix& output_data, const tensor::natural_t iterations, const tensor::real_t learning_rate);
+
       natural_t input_size() const;
       natural_t output_size() const;
 
@@ -51,13 +53,8 @@ namespace tensor {
 
       std::string print_topology() const;
 
-      static std::string write_string(const ann& model) {
-        return model.print_topology();
-      }
-
-      const std::vector<dyn_vector>& get_layer_outputs() const {
-        return layer_outputs;
-      }
+      static std::string write_string(const ann& model) { return model.print_topology(); }
+      const std::vector<dyn_vector>& get_layer_outputs() const { return layer_outputs; }
 
      private:
       enum YesNo {

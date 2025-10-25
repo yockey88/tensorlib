@@ -40,7 +40,9 @@ if __name__ == "__main__":
       print("Building the project...")
       # build fbs first
       recursive_compile_flatbuffers("network/fb_specs")
-      subprocess.run(["ninja"], check=True, cwd="build")
+      # subprocess.run(["cmake", "-S", ".", "-B", "build", "-G", "Ninja"], check=True)
+      subprocess.run(["cmake", "--build", "build", "--config", "Release"], check=True)
+      # subprocess.run(["ninja"], check=True, cwd="build")
 
       if args.run:
         # subprocess.run(["build/network/network_driver.exe"], check=True)

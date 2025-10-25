@@ -85,6 +85,7 @@ namespace tensor {
     using derivative_fn_t = dyn_vector (*)(const dyn_vector&);
     using dyn_activation_fn_t = dyn_vector (*)(const dyn_vector&);
 
+    /// \todo replace these functions with a computation graph
     struct layer_activation {
       dyn_activation_fn_t activation_function = nullptr;
       derivative_fn_t derivative_function = nullptr;
