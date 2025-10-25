@@ -31,6 +31,34 @@ namespace training {
     }
   };
 
+  // clang-format off
+  ff_network train_simple_model(const std::vector<tensor::natural_t>& topology, tensor::dyn_matrix& input_data, tensor::dyn_matrix& output_data, 
+                                const tensor::natural_t iterations, const tensor::real_t learning_rate) {
+    // clang-format on
+    auto [rand_weights, rand_biases] = tensor::neural::random_parameters(topology, 0.f, 1.f);
+    std::vector<tensor::dyn_matrix> W = rand_weights;
+    std::vector<tensor::dyn_vector> b = rand_biases;
+
+    /// simple xor feedforward network with one hidden layer of 2 neurons
+    ff_network model{ topology };
+    model.bind_affine_layer(0, W[0], b[0], tensor::neural::sigmoid_layer);
+    model.bind_affine_layer(1, W[1], b[1], tensor::neural::sigmoid_layer);
+    /// we have to compute an initial cost as a sort of 'warmup' for the system (this needs to be fixed later)
+    ///   this is a hack because the model is 'lazy' in an extremely loose sense
+    //    (pls I know lazy doesnt apply here, but like it does even if it doesnt, you know? like it is but it isnt?
+    //     like i swear it is i promise like actually tho)
+    tensor::real_t initial_cost = tensor::neural::compute_cost(input_data, output_data, model);
+    std::println("training model against xor data, initial cost: {}", initial_cost);
+    for (size_t i = 0; i < iterations; ++i) {
+      ff_network gradient = tensor::neural::backpropogate(model, input_data, output_data);
+      tensor::neural::learn(model, gradient, learning_rate);
+    }
+    tensor::real_t final_cost = tensor::neural::compute_cost(input_data, output_data, model);
+    std::println("training model against xor data, final cost: {}", final_cost);
+
+    return model;
+  }
+
 }  // namespace training
 
 int main() {
@@ -40,42 +68,14 @@ int main() {
     tensor::dyn_matrix input = training::training_inputs;
     tensor::dyn_matrix xor_outputs = training::xor_outputs;
 
-    std::array<tensor::natural_t, 3> topology = { 2, 2, 1 };
-
-    auto [rand_weights, rand_biases] = tensor::neural::random_parameters(topology, 0.f, 1.f);
-    std::vector<tensor::dyn_matrix> W = rand_weights;
-    std::vector<tensor::dyn_vector> b = rand_biases;
-
-    /// simple xor feedforward network with one hidden layer of 2 neurons
-    ff_network ann{ { 2, 2, 1 } };
-    ann.bind_affine_layer(0, W[0], b[0], tensor::neural::sigmoid_layer);
-    ann.bind_affine_layer(1, W[1], b[1], tensor::neural::sigmoid_layer);
-
-    std::print("=========[XOR Model]=========================\n");
-    std::print("ANN = {}\n", tensor::as_string(ann));
-    std::print("=============================================\n");
-
+    tensor::natural_t iterations = 100000;
     tensor::real_t learning_rate = 0.1f;
-
-    std::println("training model against xor data");
-    for (size_t i = 0; i < 100000; ++i) {
-      tensor::real_t cost = tensor::neural::compute_cost(input, xor_outputs, ann);
-      ff_network gradient = tensor::neural::backpropogate(ann, input, xor_outputs);
-      tensor::neural::learn(ann, gradient, learning_rate);
-
-      if (i % 1000 == 0) {
-        std::print("=========[cost [{}] = {}]=========================\n", i, cost);
-        // std::print("ANN = {}\n", tensor::as_string(ann));
-        // std::print("---------------------------------------------\n");
-        // std::print("gradient = {}\n", tensor::as_string(gradient));
-        // std::print("=============================================\n");
-      }
-    }
+    ff_network model = training::train_simple_model({ 2, 2, 1 }, input, xor_outputs, iterations, learning_rate);
 
     for (size_t i = 0; i < input.rows; ++i) {
       tensor::dyn_vector in_i = input.get_row(i);
       tensor::dyn_vector o_i = xor_outputs.get_row(i);
-      tensor::dyn_vector result = ann.forward(in_i);
+      tensor::dyn_vector result = model.forward(in_i);
       std::print("input: [{}, {}] -> output: [{}] -> expected: [{}]\n", in_i[0], in_i[1], result[0], o_i[0]);
     }
   }

@@ -18,29 +18,19 @@
 namespace tensor {
   namespace neural {
 
-    ann::ann(std::initializer_list<natural_t> topology)
-        : L(topology.size()) {
-      TENSORLIB_ASSERT(L > 0, "Topology must have at least one layer.");
-
-      std::vector<natural_t> topology_buffer(topology.size());
-      std::ranges::copy(topology, topology_buffer.begin());
-
-      initialize(topology_buffer);
-    }
-
-    ann::ann(const std::span<natural_t> topology)
+    ann::ann(const std::span<const natural_t> topology)
         : L(topology.size()) {
       TENSORLIB_ASSERT(L > 0, "Topology must have at least one layer.");
       initialize(topology);
     }
 
-    ann::ann(const std::span<natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b)
+    ann::ann(const std::span<const natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b)
         : L(topology.size()), W(W), b(b) {
       TENSORLIB_ASSERT(L > 0, "Topology must have at least one layer.");
       initialize(topology, false);
     }
 
-    ann::ann(const std::span<natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b, const std::vector<layer_activation>& activation_functions)
+    ann::ann(const std::span<const natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b, const std::vector<layer_activation>& activation_functions)
         : L(topology.size()), W(W), b(b), activation_functions(activation_functions) {
       TENSORLIB_ASSERT(L > 0, "Topology must have at least one layer.");
       initialize(topology, false, false);
@@ -176,7 +166,8 @@ namespace tensor {
       ss << " -- " << l_i.size() << " layers\n";
       ss << " -- Input size: " << l_i.front() << "\n";
       ss << " -- Output size: " << l_i.back() << "\n";
-      ss << " -- Hidden layers: " << L - 1 << "\n";
+      /// -2 bc input and output :D 1 + 1 = 2 :D
+      ss << " -- Hidden layers: " << L - 2 << "\n";
       ss << " -- Total Layers = " << L + 1 << "\n";
       ss << " -- layers --\n";
       for (size_t i = 0; i < L; ++i) {
@@ -194,7 +185,7 @@ namespace tensor {
       return ss.str();
     }
 
-    void ann::initialize(const std::span<natural_t> topology, bool randomize_parameters, bool default_activation) {
+    void ann::initialize(const std::span<const natural_t> topology, bool randomize_parameters, bool default_activation) {
       l_i.resize(topology.size());
       std::ranges::copy(topology, l_i.begin());
 
@@ -226,7 +217,7 @@ namespace tensor {
       }
     }
 
-    std::pair<std::vector<dyn_matrix>, std::vector<dyn_vector>> random_parameters(const std::span<natural_t> topology, real_t min, real_t max) {
+    std::pair<std::vector<dyn_matrix>, std::vector<dyn_vector>> random_parameters(const std::span<const natural_t> topology, real_t min, real_t max) {
       std::vector<dyn_matrix> W;
       std::vector<dyn_vector> b;
 
@@ -296,6 +287,11 @@ namespace tensor {
       }
     }
 
+    /// \todo replace hardcoded binding activations with something more flexible using a computation graph,
+    ///         the pros of hardcoded derivatives is compile-time certainty and speed, but at the same time expanding the
+    ///         library is more difficult
+    /// \note alternative is coming up with a more clever system for managing bindings and possibly introducing and extremely simple syntax
+    ///         to read in NNs from files (similar to ollama)
     ann backpropogate(ann& model, const dyn_matrix& input_data, const dyn_matrix& output_data) {
       TENSORLIB_ASSERT(input_data.rows == output_data.rows, "Input and output data must have the same number of rows.");
       TENSORLIB_ASSERT(input_data.cols == model.input_size(), "Input data size does not match ANN input size.");
@@ -304,6 +300,11 @@ namespace tensor {
       ann gradient = model;
       gradient.zero();
 
+      /// backpropogation works over all sets of input->output pairs
+      ///     we are computing minimizers of cost function C(N, x) = sum_1,M(|N(x) - y|^2)
+      ///     where N is the neural network, x is the input data, and y is the output data
+      /// so we find the gradient of the cost function (embedded in some high-dimensional space) and move against it
+      ///     to find a valley in the cost landscape so that we can 'be as close as possible' to the desired output
       for (size_t i = 0; i < input_data.rows; ++i) {
         dyn_vector in_i = input_data.get_row(i);
         dyn_vector o_i = output_data.get_row(i);

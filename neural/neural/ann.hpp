@@ -13,16 +13,17 @@
 
 #include "linalgebra/dyn_matrix.hpp"
 #include "linalgebra/dyn_vector.hpp"
+
 #include "neural/activation.hpp"
 
 namespace tensor {
   namespace neural {
 
-    struct ann {
-      ann(std::initializer_list<natural_t> topology);
-      ann(const std::span<natural_t> topology);
-      ann(const std::span<natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b);
-      ann(const std::span<natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b, const std::vector<layer_activation>& activation_functions);
+    class ann {
+     public:
+      ann(const std::span<const natural_t> topology);
+      ann(const std::span<const natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b);
+      ann(const std::span<const natural_t> topology, const std::vector<dyn_matrix>& W, const std::vector<dyn_vector>& b, const std::vector<layer_activation>& activation_functions);
 
       natural_t input_size() const;
       natural_t output_size() const;
@@ -76,11 +77,11 @@ namespace tensor {
       std::vector<dyn_vector> layer_outputs;
       std::vector<dyn_vector> activated_outputs;
 
-      void initialize(const std::span<natural_t> topology, bool randomize_parameters = true, bool default_activation = true);
+      void initialize(const std::span<const natural_t> topology, bool randomize_parameters = true, bool default_activation = true);
       void on_validate() const;
     };
 
-    std::pair<std::vector<dyn_matrix>, std::vector<dyn_vector>> random_parameters(const std::span<natural_t> topology, real_t min = -1.f, real_t max = 1.f);
+    std::pair<std::vector<dyn_matrix>, std::vector<dyn_vector>> random_parameters(const std::span<const natural_t> topology, real_t min = -1.f, real_t max = 1.f);
 
     real_t compute_cost(const dyn_matrix& input_data, const dyn_matrix& output_data, ann& model);
     void finite_difference(real_t cost, ann& model, ann& gradient, const dyn_matrix& input_data, const dyn_matrix& output_data, real_t eps = 1e-1f);
