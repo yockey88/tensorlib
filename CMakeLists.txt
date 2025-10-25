@@ -95,7 +95,7 @@ set(TENSORLIB_EXTERN_LIBRARY_DIRS ${TENSORLIB_EXTERN_DIR}/flatbuffers/lib)
 set(TENSORLIB_DEFINES ${TENSORLIB_DEFINES} ASIO_STANDALONE)
 set(TENSORLIB_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/tensorlib ${TENSORLIB_EXTERN_INCLUDES})
 set(NEURAL_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/neural)
-set(NETWORK_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/network)
+# set(NETWORK_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/network)
 
 option(TENSORLIB_REAL_TYPE_USE_DOUBLE "Use doubles for tensor values" OFF)
 
@@ -140,6 +140,6 @@ add_subdirectory(extern)
 add_subdirectory(tensorlib)
 # add_subdirectory(gpu)
 add_subdirectory(neural)
-add_subdirectory(network)
+# add_subdirectory(network)
 
 add_subdirectory(test)

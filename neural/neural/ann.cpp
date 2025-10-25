@@ -10,9 +10,10 @@
 #include "core/serialization.hpp"
 #include "core/types.hpp"
 
-#include "activation.hpp"
 #include "linalgebra/dyn_matrix.hpp"
 #include "linalgebra/dyn_vector.hpp"
+
+#include "activation.hpp"
 
 namespace tensor {
   namespace neural {
@@ -259,7 +260,7 @@ namespace tensor {
     void finite_difference(real_t cost, ann& model, ann& gradient, const dyn_matrix& input_data, const dyn_matrix& output_data, real_t eps) {
       real_t saved = 0.f;
 
-      for (natural_t l = 0; l < model.num_hidden_layers() - 1; ++l) {
+      for (natural_t l = 0; l < model.num_hidden_layers(); ++l) {
         dyn_matrix& W = model.weight(l);
         dyn_vector& b = model.bias(l);
 
@@ -283,9 +284,11 @@ namespace tensor {
     }
 
     void learn(ann& model, ann& gradient, real_t learning_rate) {
-      for (natural_t l = 0; l < model.num_hidden_layers() - 1; ++l) {
-        for (natural_t i = 0; i < model.weight(l).data.size(); ++i) {
-          model.weight(l).data[i] -= learning_rate * gradient.weight(l).data[i];
+      for (natural_t l = 0; l < model.num_hidden_layers(); ++l) {
+        for (natural_t i = 0; i < model.weight(l).rows; ++i) {
+          for (natural_t j = 0; j < model.weight(l).cols; ++j) {
+            model.weight(l)(i, j) -= learning_rate * gradient.weight(l)(i, j);
+          }
         }
         for (natural_t i = 0; i < model.bias(l).data.size(); ++i) {
           model.bias(l).data[i] -= learning_rate * gradient.bias(l).data[i];
@@ -322,22 +325,29 @@ namespace tensor {
         gradient.output(model.num_hidden_layers()) = dc;
 
         for (natural_t layer = model.num_hidden_layers(); layer > 0; --layer) {
-          // /// use layer + 1 because we want the size of the vector this layer outputs to iterate over
-          // /// here we use layer for both activation/output because this is the f'(W_l * x_(l-1) + b_l) part of the gradient
           dyn_vector activation_derivative = model.activation(layer - 1).derivative_function(model.output(layer));
-          dyn_vector gradient_output = gradient.output(layer);
 
+          // Compute delta = gradient ⊙ f'(z)
           for (natural_t r = 0; r < model.output(layer).size; ++r) {
-            real_t grad_output = gradient_output[r];
-            real_t act_derivative = activation_derivative[r];
+            gradient.output(layer)[r] *= activation_derivative[r];
+          }
 
-            gradient.bias(layer - 1)[r] += grad_output * act_derivative;
+          // Use delta to compute gradients
+          for (natural_t r = 0; r < model.output(layer).size; ++r) {
+            gradient.bias(layer - 1)[r] += gradient.output(layer)[r];
+            for (size_t c = 0; c < model.activated_output(layer - 1).size; ++c) {
+              gradient.weight(layer - 1)(r, c) += gradient.output(layer)[r] * model.activated_output(layer - 1)[c];
+            }
+          }
+
+          // Propagate delta backward: δ_{l-1} = W^T * δ_l
+          if (layer > 1) {
             for (size_t c = 0; c < model.output(layer - 1).size; ++c) {
-              real_t weight_shift = model.output(layer - 1)[c];
-              real_t output_shift = model.weight(layer - 1)(r, c);
-
-              gradient.weight(layer - 1)(r, c) += grad_output * act_derivative * weight_shift;
-              gradient.output(layer - 1)[c] += grad_output * act_derivative * output_shift;
+              real_t sum = 0.f;
+              for (natural_t r = 0; r < model.output(layer).size; ++r) {
+                sum += model.weight(layer - 1)(r, c) * gradient.output(layer)[r];
+              }
+              gradient.output(layer - 1)[c] += sum;
             }
           }
         }

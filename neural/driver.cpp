@@ -46,6 +46,7 @@ int main() {
     std::vector<tensor::dyn_matrix> W = rand_weights;
     std::vector<tensor::dyn_vector> b = rand_biases;
 
+    /// simple xor feedforward network with one hidden layer of 2 neurons
     ff_network ann{ { 2, 2, 1 } };
     ann.bind_affine_layer(0, W[0], b[0], tensor::neural::sigmoid_layer);
     ann.bind_affine_layer(1, W[1], b[1], tensor::neural::sigmoid_layer);
@@ -57,9 +58,8 @@ int main() {
     tensor::real_t learning_rate = 0.1f;
 
     std::println("training model against xor data");
-    for (size_t i = 0; i < 500000; ++i) {
+    for (size_t i = 0; i < 50000; ++i) {
       tensor::real_t cost = tensor::neural::compute_cost(input, xor_outputs, ann);
-
       ff_network gradient = tensor::neural::backpropogate(ann, input, xor_outputs);
       tensor::neural::learn(ann, gradient, learning_rate);
 

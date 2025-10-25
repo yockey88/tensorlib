@@ -43,12 +43,14 @@ if __name__ == "__main__":
       subprocess.run(["ninja"], check=True, cwd="build")
 
       if args.run:
-        subprocess.run(["build/network/network_driver.exe"], check=True)
+        # subprocess.run(["build/network/network_driver.exe"], check=True)
+        subprocess.run(["build/neural/neural_driver.exe"], check=True)
       elif args.run_test_suites:
         subprocess.run(["build/test/test_suites/test_suites.exe"], check=True)
 
     elif args.run:
-      subprocess.run(["build/network/network_driver.exe"], check=True)
+      # subprocess.run(["build/network/network_driver.exe"], check=True)
+      subprocess.run(["build/neural/neural_driver.exe"], check=True)
     elif args.run_sandbox:
       subprocess.run([f"build/sandboxes/{args.run_sandbox}.exe"], check=True)
     elif args.run_test_suites:

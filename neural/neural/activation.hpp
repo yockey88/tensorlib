@@ -51,7 +51,7 @@ namespace tensor {
 
     template <natural_t N>
     constexpr vector<N> sigmoid_derivative(const vector<N>& v) {
-      return vector<N>{ activate_vector_element(v, [](real_t x) { return detail::sigmoid(x) * (1 - detail::sigmoid(x)); }, std::make_index_sequence<N>{}) };
+      return vector<N>{ activate_vector_element(v, [](real_t x) { return x * (1 - x); }, std::make_index_sequence<N>{}) };
     }
 
     template <natural_t N>
